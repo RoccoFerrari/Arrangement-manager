@@ -1,0 +1,9 @@
+*.exe 
+*.out
+*.dot
+/.vscode
+*.csv
+*.iml
+**/.idea/
+*.asv
+**/.obsidian/
