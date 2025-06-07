@@ -17,5 +17,14 @@
         android:id="@+id/selectAction"
         android:name="com.example.arrangementmanager.SelectAction"
         android:label="fragment_select_action"
-        tools:layout="@layout/fragment_select_action" />
+        tools:layout="@layout/fragment_select_action" >
+        <action
+            android:id="@+id/action_selectAction_to_dragAndDrop"
+            app:destination="@id/dragAndDrop" />
+    </fragment>
+    <fragment
+        android:id="@+id/dragAndDrop"
+        android:name="com.example.arrangementmanager.dragAndDrop"
+        android:label="fragment_drag_and_drop"
+        tools:layout="@layout/fragment_drag_and_drop" />
 </navigation>
