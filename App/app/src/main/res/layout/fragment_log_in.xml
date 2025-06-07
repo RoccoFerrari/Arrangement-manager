@@ -35,7 +35,7 @@
         tools:layout_editor_absoluteY="227dp" />
 
     <Button
-        android:id="@+id/log_in"
+        android:id="@+id/logIn_button"
         android:layout_width="185dp"
         android:layout_height="68dp"
         android:text="Log In"
