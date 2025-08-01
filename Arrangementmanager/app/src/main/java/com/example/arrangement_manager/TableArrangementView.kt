@@ -11,7 +11,6 @@ import android.graphics.RectF
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
-import android.widget.Toast
 import androidx.core.graphics.toColorInt
 
 // Interfaccia di callback per comunicare le modifiche a un tavolo
@@ -35,8 +34,11 @@ class TableArrangementView @JvmOverloads constructor(
     private val handleRadius = 25f
     private val reusableRect = RectF()
     private val matrix = Matrix()
-    private var scaleFactor = 1f
+    private var isScaling = false
     private var inverseMatrix = Matrix()
+
+    // Stato per EditMode
+    private var isEditMode = false
 
     // ----------------------------------------
     // Listener che il Fragment imposta per ricevere le modifiche
@@ -75,14 +77,28 @@ class TableArrangementView @JvmOverloads constructor(
 
     // ----------------------------------------
     // Variabili e metodi per gestire lo zoom
-    // ----------------------------------------
+    // -----------------------------------  -----
 
     // Gestore dello zoom
     private val scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScaleBegin(detector: ScaleGestureDetector) : Boolean {
+            isScaling = true
+            return true
+        }
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
+            isScaling = false
+        }
+
         override fun onScale(detector: ScaleGestureDetector): Boolean {
-            scaleFactor *= detector.scaleFactor
-            scaleFactor = scaleFactor.coerceIn(0.5f, 5.0f) // Limita zoom tra 0.5x e 5.0x
-            matrix.setScale(scaleFactor, scaleFactor, detector.focusX, detector.focusY)
+            val scaleFactor = detector.scaleFactor
+            // scaleFactor = 1 + (scaleFactor - 1) * 0.5f
+            val focusX = detector.focusX
+            val focusY = detector.focusY
+
+            // Pre-moltiplica la matrice per trasare il punto focale sull'orgine
+            // applicare la scala e poi traslare nuovamente il punto focale alla sua
+            // posizione originale
+            matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
             invalidate()
             return true
         }
@@ -91,13 +107,10 @@ class TableArrangementView @JvmOverloads constructor(
     // Gestore del pan
     private val panGestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-            // Applica la traslazione solo se non stiamo trascinando o ridimensionando un tavolo
-            if(mode == Mode.PAN) {
-                matrix.postTranslate(-distanceX, -distanceY)
-                invalidate()
-                return true;
-            }
-            return false
+            // Tralazione per il pan
+            matrix.postTranslate(-distanceX, -distanceY)
+            invalidate()
+            return true
         }
     })
 
@@ -109,9 +122,29 @@ class TableArrangementView @JvmOverloads constructor(
     // Metodo per aggiornare la lista dei tavoli
     fun setTables(newTables: List<Table_>) {
         this.tables = newTables
-        selectedTable = tables.find { it.name == selectedTable?.name }
+        if(isEditMode)
+            selectedTable = tables.find { it.name == selectedTable?.name }
+        else
+            selectedTable = null
         // Invalida la vista per forzare la ridisegnazione con la nuova lista di tavoli.
         invalidate()
+    }
+
+    fun setEditMode(enable: Boolean) {
+        isEditMode = enable
+        if(!enable) {
+            selectedTable = null
+        }
+        invalidate()
+    }
+
+    fun clearSelection() {
+        selectedTable = null
+        invalidate()
+    }
+
+    fun getSelectedTable() : Table_? {
+        return selectedTable
     }
 
     // metodo per disegnare la vista
@@ -136,7 +169,7 @@ class TableArrangementView @JvmOverloads constructor(
             val textY = reusableRect.centerY() - ((tableText.descent() + tableText.ascent()) / 2)
             canvas.drawText(table.name, textX, textY, tableText)
             // Disegna il bordo e il maniglione del rettangolo
-            if(table.name == selectedTable?.name) {
+            if(isEditMode && table.name == selectedTable?.name) {
                 canvas.drawRect(reusableRect, selectedTablePaint)
 
                 val handleX = reusableRect.right
@@ -150,28 +183,41 @@ class TableArrangementView @JvmOverloads constructor(
 
     // Gestione degli eventi touch
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        // Delega l'evento al gestore dello zoom e del pan
         scaleGestureDetector.onTouchEvent(event!!)
-        panGestureDetector.onTouchEvent(event)
 
-        // Gesto di zoom?
+        // E' in corso uno zoom?
+        if(isScaling)
+            return true
+
+        // Gesto multitouch?
         if((event.pointerCount ?: 0) > 1) {
-            mode = Mode.PAN
             return true
         }
 
+        val currentX = event.x
+        val currentY = event.y
+
         // Calcola la matrice inversa per convertire le coordinate del tocco
         matrix.invert(inverseMatrix)
-        val trasformedPoints = floatArrayOf(event.x, event.y)
+        val trasformedPoints = floatArrayOf(currentX, currentY)
         inverseMatrix.mapPoints(trasformedPoints)
         val transformedX = trasformedPoints[0]
         val transformedY = trasformedPoints[1]
+
+        if(!isEditMode) {
+            panGestureDetector.onTouchEvent(event)
+            if(event.action == MotionEvent.ACTION_DOWN) {
+                selectedTable = null
+                invalidate()
+            }
+            return true
+        }
 
         when(event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 selectedTable = findTableAtPosition(transformedX, transformedY)
                 if(selectedTable != null) {
-                    if(isNearResizeHandle(selectedTable!!, transformedX, transformedY)) {
+                    if (isNearResizeHandle(selectedTable!!, transformedX, transformedY)) {
                         mode = Mode.RESIZE
                     } else {
                         mode = Mode.DRAG
@@ -179,33 +225,43 @@ class TableArrangementView @JvmOverloads constructor(
                 } else {
                     mode = Mode.PAN
                 }
-                lastX = transformedX
-                lastY = transformedY
+                lastX = currentX
+                lastY = currentY
                 invalidate()
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                if(selectedTable != null && mode != Mode.NONE) {
-                    val deltaX = transformedX - lastX
-                    val deltaY = transformedY - lastY
-                    val updatedTable = when(mode) {
-                        Mode.DRAG -> selectedTable!!.copy(
+                val deltaX = currentX - lastX
+                val deltaY = currentY - lastY
+
+                when(mode) {
+                    Mode.DRAG -> {
+                        val updatedTable = selectedTable!!.copy(
                             x_coordinate = selectedTable!!.x_coordinate + deltaX,
                             y_coordinate = selectedTable!!.y_coordinate + deltaY
                         )
-                        Mode.RESIZE -> selectedTable!!.copy(
+                        tables = tables.map { (if (it.name == updatedTable.name) updatedTable else it) }
+                        selectedTable = updatedTable
+                        invalidate()
+                    }
+                    Mode.RESIZE -> {
+                        val updatedTable = selectedTable!!.copy(
                             width = (selectedTable!!.width + deltaX).coerceAtLeast(50f),
                             height = (selectedTable!!.height + deltaY).coerceAtLeast(50f)
                         )
-                        else -> selectedTable
+                        tables = tables.map { (if (it.name == updatedTable?.name) updatedTable else it) }
+                        selectedTable = updatedTable
+                        invalidate()
                     }
-                    tables = tables.map { (if (it.name == updatedTable?.name) updatedTable else it) }
-                    selectedTable = updatedTable
-                    lastX = transformedX
-                    lastY = transformedY
-                    invalidate()
-                    return true
+                    Mode.PAN -> {
+                        matrix.postTranslate(deltaX, deltaY)
+                        invalidate()
+                    }
+                    Mode.NONE -> {}
                 }
+                lastX = currentX
+                lastY = currentY
+                return true
             }
             MotionEvent.ACTION_UP -> {
                 if(selectedTable != null && onTableUpdatedListener != null) {

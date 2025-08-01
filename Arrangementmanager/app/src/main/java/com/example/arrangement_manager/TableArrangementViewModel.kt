@@ -36,10 +36,11 @@ class TableArrangementViewModel(
                 nextTableNumber++
             }
             val tableName = "Table $nextTableNumber"
+            val offset = (nextTableNumber - 1) * 20f
             val newTable = Table_(
                 name = tableName,
-                x_coordinate = 50f,
-                y_coordinate = 50f,
+                x_coordinate = 50f + offset,
+                y_coordinate = 50f + offset,
                 width = 250f,
                 height = 100f,
                 id_user = userEmail)
