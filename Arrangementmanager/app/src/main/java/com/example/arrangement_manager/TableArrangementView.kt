@@ -28,6 +28,7 @@ class TableArrangementView @JvmOverloads constructor(
     private var selectedTable: Table_? = null
     private var lastX: Float = 0f
     private var lastY: Float = 0f
+    private val handleRadius = 25f
 
     // Listener che il Fragment imposta per ricevere le modifiche
     var onTableUpdatedListener: OnTableUpdatedListener? = null
@@ -54,6 +55,11 @@ class TableArrangementView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = 4f
         color = Color.RED
+    }
+
+    private val resizeHandlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.BLUE
     }
 
     private val reusableRect = RectF()
@@ -83,9 +89,13 @@ class TableArrangementView @JvmOverloads constructor(
             val textX = reusableRect.centerX()
             val textY = reusableRect.centerY() - ((tableText.descent() + tableText.ascent()) / 2)
             canvas.drawText(table.name, textX, textY, tableText)
-            // Disegna il bordo del rettangolo
+            // Disegna il bordo e il maniglione del rettangolo
             if(table.name == selectedTable?.name) {
                 canvas.drawRect(reusableRect, selectedTablePaint)
+
+                val handleX = reusableRect.right
+                val handleY = reusableRect.bottom
+                canvas.drawCircle(handleX, handleY, handleRadius, resizeHandlePaint)
             }
         }
     }
@@ -135,7 +145,6 @@ class TableArrangementView @JvmOverloads constructor(
                 if(selectedTable != null && onTableUpdatedListener != null) {
                     // comunica al fragment che il tavolo è stato aggiornato
                     onTableUpdatedListener?.onTableUpdated(selectedTable!!)
-                    Toast.makeText(context, "Tavolo aggiornato", Toast.LENGTH_SHORT).show()
                 }
                 invalidate()
                 return true
@@ -156,9 +165,14 @@ class TableArrangementView @JvmOverloads constructor(
     }
 
     private fun isNearResizeHandle(table: Table_, x: Float, y: Float): Boolean {
-        val handleSize = 50f
-        val right = table.x_coordinate + table.width
-        val bottom = table.y_coordinate + table.height
-        return x >= right - handleSize && y >= bottom - handleSize
+        val handleCenterX = table.x_coordinate + table.width
+        val handleCenterY = table.y_coordinate + table.height
+
+        val distance = Math.sqrt(
+            Math.pow((x - handleCenterX).toDouble(), 2.0) +
+                    Math.pow((y - handleCenterY).toDouble(), 2.0)
+        )
+
+        return distance <= handleRadius
     }
 }

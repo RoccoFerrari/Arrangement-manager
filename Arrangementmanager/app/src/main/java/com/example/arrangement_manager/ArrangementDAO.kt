@@ -35,7 +35,8 @@ data class Table_(
     @ColumnInfo(name = "id_user") val id_user: String
 )
 
-@Entity(tableName = "Menu",
+@Entity(primaryKeys = ["name", "id_user"],
+    tableName = "Menu",
     foreignKeys = [ForeignKey(
         entity = User::class,
         parentColumns = ["email"],
@@ -44,7 +45,7 @@ data class Table_(
     )]
 )
 data class MenuItem(
-    @PrimaryKey @ColumnInfo(name = "name") val name: String,
+    @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "price") val price: Float,
     @ColumnInfo(name = "description") val description: String,
     @ColumnInfo(name = "id_user") val id_user: String
