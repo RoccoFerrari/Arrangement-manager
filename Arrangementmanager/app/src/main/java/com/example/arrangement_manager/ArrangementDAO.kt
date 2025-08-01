@@ -47,6 +47,7 @@ data class Table_(
 data class MenuItem(
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "price") val price: Float,
+    @ColumnInfo(name = "quantity") val quantity: Int,
     @ColumnInfo(name = "description") val description: String,
     @ColumnInfo(name = "id_user") val id_user: String
 )

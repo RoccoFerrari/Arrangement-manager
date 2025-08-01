@@ -18,7 +18,13 @@ import androidx.navigation.fragment.navArgs
 class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
     private val args: TableArrangementFragmentArgs by navArgs()
     private lateinit var tableArrangementView: TableArrangementView
-    private lateinit var addButton: Button
+    private lateinit var addTableButton: Button
+    private lateinit var editModeButton: Button
+    private lateinit var doneButton: Button
+    private lateinit var deleteButton: Button
+    private lateinit var addMenuButton: Button
+
+    private var isEditMode = false
 
     private val loginViewModel: LoginViewModel by activityViewModels {
         LoginViewModelFactory(
@@ -47,7 +53,11 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
 
         // Ottieni i riferimenti agli elementi UI
         tableArrangementView = view.findViewById(R.id.tableArrangementView)
-        addButton = view.findViewById(R.id.addButton)
+        addTableButton = view.findViewById(R.id.addButton)
+        doneButton = view.findViewById(R.id.doneButton)
+        deleteButton = view.findViewById(R.id.deleteButton)
+        addMenuButton = view.findViewById(R.id.addMenu)
+        editModeButton = view.findViewById(R.id.editButton)
 
         // Impostazione del fragment stesso come listener per gli aggiornamenti
         tableArrangementView.onTableUpdatedListener = this
@@ -59,29 +69,53 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
             }
         }
 
-        // Quando l'utente è loggato, carica i tavoli specifici per quell'utente.
-//        viewLifecycleOwner.lifecycleScope.launch {
-//            loginViewModel.userSessionState.collectLatest { state ->
-//                if (state.isLoggedIn && state.email != null) {
-//                    // Carica i tavoli associati all'utente corrente.
-//                    tableViewModel.loadTablesForUser()
-//                } else {
-//                    Toast.makeText(requireContext(), "Utente non loggato, impossibile caricare tavoli.", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//        }
-
         // Pulsante Add Table
-        addButton.setOnClickListener {
-            tableViewModel.addTable()
-            // Recupera l'email dell'utente loggato dal LoginViewModel.
-//            val currentUserId = loginViewModel.userSessionState.value.email
-//            if (currentUserId != null) {
-//                // Chiama il metodo del TableArrangementViewModel per aggiungere un nuovo tavolo
-//                tableViewModel.addTable()
-//            } else {
-//                Toast.makeText(requireContext(), "Devi essere loggato per aggiungere tavoli.", Toast.LENGTH_SHORT).show()
-//            }
+        addTableButton.setOnClickListener {
+            if(isEditMode)
+                tableViewModel.addTable()
+            else
+                Toast.makeText(requireContext(), "Edit mode needed", Toast.LENGTH_SHORT).show()
+        }
+
+        deleteButton.setOnClickListener {
+            if(isEditMode)
+                if(tableArrangementView.getSelectedTable() == null) {
+                    Toast.makeText(requireContext(), "Select a table to delete", Toast.LENGTH_SHORT).show()
+                } else {
+                    tableArrangementView.getSelectedTable()?.let { table ->
+                    tableViewModel.deleteTable(table)
+                    tableArrangementView.clearSelection()
+                    }
+                }
+            else
+                Toast.makeText(requireContext(), "Edit mode needed", Toast.LENGTH_SHORT).show()
+        }
+
+        editModeButton.setOnClickListener {
+            setEditMode(true)
+        }
+        doneButton.setOnClickListener {
+            setEditMode(false)
+        }
+    }
+
+    private fun setEditMode(enable: Boolean) {
+        isEditMode = enable
+        tableArrangementView.setEditMode(enable)
+
+        if(isEditMode) {
+            addTableButton.visibility = View.VISIBLE
+            editModeButton.visibility = View.GONE
+            doneButton.visibility = View.VISIBLE
+            deleteButton.visibility = View.VISIBLE
+            addMenuButton.visibility = View.GONE
+        } else {
+            tableArrangementView.clearSelection()
+            addTableButton.visibility = View.GONE
+            editModeButton.visibility = View.VISIBLE
+            doneButton.visibility = View.GONE
+            deleteButton.visibility = View.GONE
+            addMenuButton.visibility = View.VISIBLE
         }
     }
 
