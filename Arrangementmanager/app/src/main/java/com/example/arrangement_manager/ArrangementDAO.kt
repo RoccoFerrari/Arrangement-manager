@@ -8,6 +8,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.ForeignKey
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "User")
@@ -16,7 +17,8 @@ data class User(
     @ColumnInfo(name = "password") val password: String
 )
 
-@Entity(tableName = "Table_",
+@Entity(primaryKeys = ["name", "id_user"],
+    tableName = "Table_",
     foreignKeys = [ForeignKey(
         entity = User::class,
         parentColumns = ["email"],
@@ -25,7 +27,7 @@ data class User(
     )]
 )
 data class Table_(
-    @PrimaryKey @ColumnInfo(name = "name") val name: String,
+    @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "x_coordinate") val x_coordinate: Float,
     @ColumnInfo(name = "y_coordinate") val y_coordinate: Float,
     @ColumnInfo(name = "width") val width: Float,
@@ -80,6 +82,11 @@ interface ArrangementDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTable(table: Table_)
 
+
+    // Updates
+
+    @Update
+    suspend fun updateTable(table: Table_)
 
     // Deletes
 
