@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 
-@Database(entities = [User::class, Table_::class, MenuItem::class], version = 3)
+@Database(entities = [User::class, Table_::class, MenuItem::class], version = 4)
 abstract class ArrangementDatabase : RoomDatabase() {
     abstract fun arrangementDao(): ArrangementDAO
 

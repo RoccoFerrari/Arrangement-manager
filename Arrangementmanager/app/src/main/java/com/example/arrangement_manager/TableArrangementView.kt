@@ -8,6 +8,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.view.MotionEvent
+import android.widget.Toast
+import androidx.core.graphics.toColorInt
 
 // Interfaccia di callback per comunicare le modifiche a un tavolo
 interface OnTableUpdatedListener {
@@ -39,7 +41,12 @@ class TableArrangementView @JvmOverloads constructor(
     // Oggetto Paint per disegnare i rettangoli dei tavoli
     private val tablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = Color.DKGRAY
+        color = "#42A5F5".toColorInt()
+    }
+    private val tableText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textSize = 24f
+        textAlign = Paint.Align.CENTER
     }
 
     // Oggetto Paint per disegnare il bordo dei tavoli selezionati
@@ -73,6 +80,9 @@ class TableArrangementView @JvmOverloads constructor(
             )
             // Disegna il rettangolo
             canvas.drawRect(reusableRect, tablePaint)
+            val textX = reusableRect.centerX()
+            val textY = reusableRect.centerY() - ((tableText.descent() + tableText.ascent()) / 2)
+            canvas.drawText(table.name, textX, textY, tableText)
             // Disegna il bordo del rettangolo
             if(table.name == selectedTable?.name) {
                 canvas.drawRect(reusableRect, selectedTablePaint)
@@ -93,14 +103,14 @@ class TableArrangementView @JvmOverloads constructor(
                         mode = Mode.DRAG
                     }
                 }
-                lastX = event!!.x
+                lastX = event.x
                 lastY = event.y
                 invalidate()
                 return selectedTable != null
             }
             MotionEvent.ACTION_MOVE -> {
                 if(selectedTable != null && mode != Mode.NONE) {
-                    val deltaX = event!!.x - lastX
+                    val deltaX = event.x - lastX
                     val deltaY = event.y - lastY
                     val updatedTable = when(mode) {
                         Mode.DRAG -> selectedTable!!.copy(
@@ -113,19 +123,20 @@ class TableArrangementView @JvmOverloads constructor(
                         )
                         else -> selectedTable
                     }
+                    tables = tables.map { (if (it.name == updatedTable?.name) updatedTable else it) }
                     selectedTable = updatedTable
-                    invalidate()
                     lastX = event.x
                     lastY = event.y
+                    invalidate()
                     return true
                 }
             }
             MotionEvent.ACTION_UP -> {
-                if(selectedTable != null) {
+                if(selectedTable != null && onTableUpdatedListener != null) {
                     // comunica al fragment che il tavolo è stato aggiornato
                     onTableUpdatedListener?.onTableUpdated(selectedTable!!)
+                    Toast.makeText(context, "Tavolo aggiornato", Toast.LENGTH_SHORT).show()
                 }
-                mode = Mode.NONE
                 invalidate()
                 return true
             }

@@ -60,27 +60,28 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
         }
 
         // Quando l'utente è loggato, carica i tavoli specifici per quell'utente.
-        viewLifecycleOwner.lifecycleScope.launch {
-            loginViewModel.userSessionState.collectLatest { state ->
-                if (state.isLoggedIn && state.email != null) {
-                    // Carica i tavoli associati all'utente corrente.
-                    tableViewModel.loadTablesForUser()
-                } else {
-                    Toast.makeText(requireContext(), "Utente non loggato, impossibile caricare tavoli.", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+//        viewLifecycleOwner.lifecycleScope.launch {
+//            loginViewModel.userSessionState.collectLatest { state ->
+//                if (state.isLoggedIn && state.email != null) {
+//                    // Carica i tavoli associati all'utente corrente.
+//                    tableViewModel.loadTablesForUser()
+//                } else {
+//                    Toast.makeText(requireContext(), "Utente non loggato, impossibile caricare tavoli.", Toast.LENGTH_SHORT).show()
+//                }
+//            }
+//        }
 
         // Pulsante Add Table
         addButton.setOnClickListener {
+            tableViewModel.addTable()
             // Recupera l'email dell'utente loggato dal LoginViewModel.
-            val currentUserId = loginViewModel.userSessionState.value.email
-            if (currentUserId != null) {
-                // Chiama il metodo del TableArrangementViewModel per aggiungere un nuovo tavolo
-                tableViewModel.addTable()
-            } else {
-                Toast.makeText(requireContext(), "Devi essere loggato per aggiungere tavoli.", Toast.LENGTH_SHORT).show()
-            }
+//            val currentUserId = loginViewModel.userSessionState.value.email
+//            if (currentUserId != null) {
+//                // Chiama il metodo del TableArrangementViewModel per aggiungere un nuovo tavolo
+//                tableViewModel.addTable()
+//            } else {
+//                Toast.makeText(requireContext(), "Devi essere loggato per aggiungere tavoli.", Toast.LENGTH_SHORT).show()
+//            }
         }
     }
 
