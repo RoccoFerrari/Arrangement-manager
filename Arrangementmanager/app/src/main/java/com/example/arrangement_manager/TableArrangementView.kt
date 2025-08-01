@@ -5,9 +5,12 @@ import android.util.AttributeSet
 import android.view.View
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
+import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.widget.Toast
 import androidx.core.graphics.toColorInt
 
@@ -23,23 +26,31 @@ class TableArrangementView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr){
 
-    // Stati per la gestione del tocco
+    // ----------------------------------------
+    // Variabili per la gestione dei tavoli
     private var tables: List<Table_> = emptyList()
     private var selectedTable: Table_? = null
     private var lastX: Float = 0f
     private var lastY: Float = 0f
     private val handleRadius = 25f
+    private val reusableRect = RectF()
+    private val matrix = Matrix()
+    private var scaleFactor = 1f
+    private var inverseMatrix = Matrix()
 
+    // ----------------------------------------
     // Listener che il Fragment imposta per ricevere le modifiche
     var onTableUpdatedListener: OnTableUpdatedListener? = null
 
+    // ----------------------------------------
     // Enum per lo stato del tocco
     private enum class Mode {
-        NONE, DRAG, RESIZE
+        NONE, DRAG, RESIZE, PAN
     }
     private var mode:  Mode = Mode.NONE
 
-    // Oggetto Paint per disegnare i rettangoli dei tavoli
+    // ----------------------------------------
+    // Oggetti Paint per disegnare i tavoli
     private val tablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = "#42A5F5".toColorInt()
@@ -62,9 +73,40 @@ class TableArrangementView @JvmOverloads constructor(
         color = Color.BLUE
     }
 
-    private val reusableRect = RectF()
+    // ----------------------------------------
+    // Variabili e metodi per gestire lo zoom
+    // ----------------------------------------
+
+    // Gestore dello zoom
+    private val scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            scaleFactor *= detector.scaleFactor
+            scaleFactor = scaleFactor.coerceIn(0.5f, 5.0f) // Limita zoom tra 0.5x e 5.0x
+            matrix.setScale(scaleFactor, scaleFactor, detector.focusX, detector.focusY)
+            invalidate()
+            return true
+        }
+    })
+
+    // Gestore del pan
+    private val panGestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+            // Applica la traslazione solo se non stiamo trascinando o ridimensionando un tavolo
+            if(mode == Mode.PAN) {
+                matrix.postTranslate(-distanceX, -distanceY)
+                invalidate()
+                return true;
+            }
+            return false
+        }
+    })
 
 
+    // ----------------------------------------
+    // Metodi per aggiornare la View
+    // ----------------------------------------
+
+    // Metodo per aggiornare la lista dei tavoli
     fun setTables(newTables: List<Table_>) {
         this.tables = newTables
         selectedTable = tables.find { it.name == selectedTable?.name }
@@ -75,6 +117,10 @@ class TableArrangementView @JvmOverloads constructor(
     // metodo per disegnare la vista
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
+        // Applica trasformazioni di zoom e pan
+        canvas.save()
+        canvas.concat(matrix)
 
         // Itera sulla lista dei tavoli e disegna ogni rettangolo
         tables.forEach { table ->
@@ -98,45 +144,65 @@ class TableArrangementView @JvmOverloads constructor(
                 canvas.drawCircle(handleX, handleY, handleRadius, resizeHandlePaint)
             }
         }
+        // ripristina la tela allo stato originale
+        canvas.restore()
     }
 
     // Gestione degli eventi touch
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when(event?.action) {
+        // Delega l'evento al gestore dello zoom e del pan
+        scaleGestureDetector.onTouchEvent(event!!)
+        panGestureDetector.onTouchEvent(event)
+
+        // Gesto di zoom?
+        if((event.pointerCount ?: 0) > 1) {
+            mode = Mode.PAN
+            return true
+        }
+
+        // Calcola la matrice inversa per convertire le coordinate del tocco
+        matrix.invert(inverseMatrix)
+        val trasformedPoints = floatArrayOf(event.x, event.y)
+        inverseMatrix.mapPoints(trasformedPoints)
+        val transformedX = trasformedPoints[0]
+        val transformedY = trasformedPoints[1]
+
+        when(event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                mode = Mode.NONE
-                selectedTable = findTableAtPosition(event.x, event.y)
+                selectedTable = findTableAtPosition(transformedX, transformedY)
                 if(selectedTable != null) {
-                    if(isNearResizeHandle(selectedTable!!, event.x, event.y)) {
+                    if(isNearResizeHandle(selectedTable!!, transformedX, transformedY)) {
                         mode = Mode.RESIZE
                     } else {
                         mode = Mode.DRAG
                     }
+                } else {
+                    mode = Mode.PAN
                 }
-                lastX = event.x
-                lastY = event.y
+                lastX = transformedX
+                lastY = transformedY
                 invalidate()
-                return selectedTable != null
+                return true
             }
             MotionEvent.ACTION_MOVE -> {
                 if(selectedTable != null && mode != Mode.NONE) {
-                    val deltaX = event.x - lastX
-                    val deltaY = event.y - lastY
+                    val deltaX = transformedX - lastX
+                    val deltaY = transformedY - lastY
                     val updatedTable = when(mode) {
                         Mode.DRAG -> selectedTable!!.copy(
                             x_coordinate = selectedTable!!.x_coordinate + deltaX,
                             y_coordinate = selectedTable!!.y_coordinate + deltaY
                         )
                         Mode.RESIZE -> selectedTable!!.copy(
-                            width = selectedTable!!.width + deltaX,
-                            height = selectedTable!!.height + deltaY
+                            width = (selectedTable!!.width + deltaX).coerceAtLeast(50f),
+                            height = (selectedTable!!.height + deltaY).coerceAtLeast(50f)
                         )
                         else -> selectedTable
                     }
                     tables = tables.map { (if (it.name == updatedTable?.name) updatedTable else it) }
                     selectedTable = updatedTable
-                    lastX = event.x
-                    lastY = event.y
+                    lastX = transformedX
+                    lastY = transformedY
                     invalidate()
                     return true
                 }
@@ -146,6 +212,7 @@ class TableArrangementView @JvmOverloads constructor(
                     // comunica al fragment che il tavolo è stato aggiornato
                     onTableUpdatedListener?.onTableUpdated(selectedTable!!)
                 }
+                mode = Mode.NONE
                 invalidate()
                 return true
             }
@@ -165,14 +232,12 @@ class TableArrangementView @JvmOverloads constructor(
     }
 
     private fun isNearResizeHandle(table: Table_, x: Float, y: Float): Boolean {
-        val handleCenterX = table.x_coordinate + table.width
-        val handleCenterY = table.y_coordinate + table.height
-
-        val distance = Math.sqrt(
-            Math.pow((x - handleCenterX).toDouble(), 2.0) +
-                    Math.pow((y - handleCenterY).toDouble(), 2.0)
+        val hitArea = RectF(
+            table.x_coordinate + table.width - handleRadius,
+            table.y_coordinate + table.height - handleRadius,
+            table.x_coordinate + table.width + handleRadius,
+            table.y_coordinate + table.height + handleRadius
         )
-
-        return distance <= handleRadius
+        return hitArea.contains(x, y)
     }
 }
