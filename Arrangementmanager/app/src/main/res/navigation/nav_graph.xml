@@ -44,5 +44,18 @@
             android:name="userEmail"
             app:argType="string"
             app:nullable="false" />
+        <action
+            android:id="@+id/action_tableArrangementFragment_to_addMenuDialogFragment"
+            app:destination="@id/addMenuDialogFragment" />
     </fragment>
+    <dialog
+        android:id="@+id/addMenuDialogFragment"
+        android:name="com.example.arrangement_manager.AddMenuDialogFragment"
+        android:label="dialog_add_menu"
+        tools:layout="@layout/dialog_add_menu">
+        <argument
+            android:name="userEmail"
+            app:argType="string"
+            app:nullable="false" />
+    </dialog>
 </navigation>
