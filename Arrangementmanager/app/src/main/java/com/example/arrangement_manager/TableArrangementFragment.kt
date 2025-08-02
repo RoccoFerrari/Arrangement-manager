@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.fragment.navArgs
@@ -96,6 +97,11 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
         }
         doneButton.setOnClickListener {
             setEditMode(false)
+        }
+        addMenuButton.setOnClickListener {
+            val userEmail = args.userEmail
+            val action = TableArrangementFragmentDirections.actionTableArrangementFragmentToAddMenuDialogFragment(userEmail)
+            findNavController().navigate(action)
         }
     }
 
