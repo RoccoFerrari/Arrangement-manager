@@ -83,9 +83,11 @@ class TableArrangementView @JvmOverloads constructor(
     private val scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScaleBegin(detector: ScaleGestureDetector) : Boolean {
             isScaling = true
+            mode = Mode.NONE
             return true
         }
         override fun onScaleEnd(detector: ScaleGestureDetector) {
+            super.onScaleEnd(detector)
             isScaling = false
         }
 
@@ -108,8 +110,10 @@ class TableArrangementView @JvmOverloads constructor(
     private val panGestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             // Tralazione per il pan
-            matrix.postTranslate(-distanceX, -distanceY)
-            invalidate()
+            if(!isScaling) {
+                matrix.postTranslate(-distanceX, -distanceY)
+                invalidate()
+            }
             return true
         }
     })
@@ -185,15 +189,16 @@ class TableArrangementView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         scaleGestureDetector.onTouchEvent(event!!)
 
-        // E' in corso uno zoom?
-        if(isScaling)
-            return true
-
-        // Gesto multitouch?
-        if((event.pointerCount ?: 0) > 1) {
+        // Se lo zoom è in corso, non fare null'altro.
+        if (isScaling) {
             return true
         }
 
+        // Gestisci il pan solo se NON stai facendo un drag o resize
+        if (!isEditMode) {
+            panGestureDetector.onTouchEvent(event)
+            return true
+        }
         val currentX = event.x
         val currentY = event.y
 
@@ -203,15 +208,6 @@ class TableArrangementView @JvmOverloads constructor(
         inverseMatrix.mapPoints(trasformedPoints)
         val transformedX = trasformedPoints[0]
         val transformedY = trasformedPoints[1]
-
-        if(!isEditMode) {
-            panGestureDetector.onTouchEvent(event)
-            if(event.action == MotionEvent.ACTION_DOWN) {
-                selectedTable = null
-                invalidate()
-            }
-            return true
-        }
 
         when(event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -269,6 +265,8 @@ class TableArrangementView @JvmOverloads constructor(
                     onTableUpdatedListener?.onTableUpdated(selectedTable!!)
                 }
                 mode = Mode.NONE
+                lastX = 0f
+                lastY = 0f
                 invalidate()
                 return true
             }
