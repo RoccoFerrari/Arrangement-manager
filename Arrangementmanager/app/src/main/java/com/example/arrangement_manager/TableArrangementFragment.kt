@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.fragment.navArgs
 
-class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
+class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClickedListener {
     private val args: TableArrangementFragmentArgs by navArgs()
     private lateinit var tableArrangementView: TableArrangementView
     private lateinit var addTableButton: Button
@@ -26,13 +26,6 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
     private lateinit var addMenuButton: Button
 
     private var isEditMode = false
-
-    private val loginViewModel: LoginViewModel by activityViewModels {
-        LoginViewModelFactory(
-            requireActivity().application,
-            (requireActivity().application as YourApplicationClass).arrangementDAO
-        )
-    }
 
     // Questo ViewModel gestisce la logica e i dati specifici dei tavoli.
     private val tableViewModel: TableArrangementViewModel by viewModels {
@@ -62,6 +55,7 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
 
         // Impostazione del fragment stesso come listener per gli aggiornamenti
         tableArrangementView.onTableUpdatedListener = this
+        tableArrangementView.onTableClickedListener = this
 
         // Ogni volta che la lista cambia la vista viene ridisegnata
         viewLifecycleOwner.lifecycleScope.launch {
@@ -99,8 +93,7 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
             setEditMode(false)
         }
         addMenuButton.setOnClickListener {
-            val userEmail = args.userEmail
-            val action = TableArrangementFragmentDirections.actionTableArrangementFragmentToAddMenuDialogFragment(userEmail)
+            val action = TableArrangementFragmentDirections.actionTableArrangementFragmentToAddMenuDialogFragment(args.userEmail)
             findNavController().navigate(action)
         }
     }
@@ -130,5 +123,12 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener {
         // Aggiorna il tavolo nel ViewModel ogni volta che viene spostato o
         // ridimensionato
         tableViewModel.updateTable(table)
+    }
+
+    override fun onTableClicked(table: Table_) {
+
+        // Naviga al DialogFragment passando gli argomenti con Safe Args
+        val action = TableArrangementFragmentDirections.actionTableArrangementFragmentToMenuOrderDialogFragment(table, args.userEmail)
+        findNavController().navigate(action)
     }
 }

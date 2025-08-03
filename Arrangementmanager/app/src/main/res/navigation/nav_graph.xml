@@ -47,6 +47,9 @@
         <action
             android:id="@+id/action_tableArrangementFragment_to_addMenuDialogFragment"
             app:destination="@id/addMenuDialogFragment" />
+        <action
+            android:id="@+id/action_tableArrangementFragment_to_menuOrderDialogFragment"
+            app:destination="@id/menuOrderDialogFragment" />
     </fragment>
     <dialog
         android:id="@+id/addMenuDialogFragment"
@@ -58,4 +61,18 @@
             app:argType="string"
             app:nullable="false" />
     </dialog>
+    <fragment
+        android:id="@+id/menuOrderDialogFragment"
+        android:name="com.example.arrangement_manager.MenuOrderDialogFragment"
+        android:label="MenuOrderDialogFragment">
+
+        <argument
+            android:name="table"
+            app:argType="com.example.arrangement_manager.Table_" />
+
+        <argument
+            android:name="userEmail"
+            app:argType="string" />
+
+    </fragment>
 </navigation>

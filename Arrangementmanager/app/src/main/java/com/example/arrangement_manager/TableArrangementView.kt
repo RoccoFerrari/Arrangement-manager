@@ -18,6 +18,10 @@ interface OnTableUpdatedListener {
     fun onTableUpdated(table: Table_)
 }
 
+interface OnTableClickedListener {
+    fun onTableClicked(table: Table_)
+}
+
 
 class TableArrangementView @JvmOverloads constructor(
     context: Context,
@@ -43,6 +47,7 @@ class TableArrangementView @JvmOverloads constructor(
     // ----------------------------------------
     // Listener che il Fragment imposta per ricevere le modifiche
     var onTableUpdatedListener: OnTableUpdatedListener? = null
+    var onTableClickedListener: OnTableClickedListener? = null
 
     // ----------------------------------------
     // Enum per lo stato del tocco

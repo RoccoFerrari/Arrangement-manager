@@ -10,6 +10,8 @@ import androidx.room.Query
 import androidx.room.ForeignKey
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import kotlinx.parcelize.Parcelize
+import android.os.Parcelable
 
 @Entity(tableName = "User")
 data class User(
@@ -17,6 +19,7 @@ data class User(
     @ColumnInfo(name = "password") val password: String
 )
 
+@Parcelize
 @Entity(primaryKeys = ["name", "id_user"],
     tableName = "Table_",
     foreignKeys = [ForeignKey(
@@ -33,7 +36,7 @@ data class Table_(
     @ColumnInfo(name = "width") val width: Float,
     @ColumnInfo(name = "height") val height: Float,
     @ColumnInfo(name = "id_user") val id_user: String
-)
+) : Parcelable
 
 @Entity(primaryKeys = ["name", "id_user"],
     tableName = "Menu",
