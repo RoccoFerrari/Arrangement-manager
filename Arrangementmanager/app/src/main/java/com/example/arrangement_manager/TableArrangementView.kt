@@ -111,15 +111,44 @@ class TableArrangementView @JvmOverloads constructor(
         }
     })
 
-    // Gestore del pan
-    private val panGestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+    // Gestore per pan e click
+    private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        // Gestione del pan
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-            // Tralazione per il pan
-            if(!isScaling) {
+            if(!isScaling && !isEditMode) {
                 matrix.postTranslate(-distanceX, -distanceY)
                 invalidate()
+                return true
             }
-            return true
+            return false
+        }
+
+        // Gestione del tocco singolo
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            // Calcola la matrice inversa per convertire le coordinate del tocco
+            matrix.invert(inverseMatrix)
+            val transformedPoints = floatArrayOf(e.x, e.y)
+            inverseMatrix.mapPoints(transformedPoints)
+            val transformedX = transformedPoints[0]
+            val transformedY = transformedPoints[1]
+
+            val tappedTable = findTableAtPosition(transformedX, transformedY)
+            if (tappedTable != null) {
+                if (isEditMode) {
+                    selectedTable = tappedTable
+                    invalidate()
+                } else {
+                    // Chiama il listener del click solo se non siamo in modalità di modifica
+                    onTableClickedListener?.onTableClicked(tappedTable)
+                }
+                return true
+            }
+            // Deseleziona il tavolo se il tocco è su un'area vuota
+            if (isEditMode) {
+                selectedTable = null
+                invalidate()
+            }
+            return false
         }
     })
 
@@ -201,7 +230,7 @@ class TableArrangementView @JvmOverloads constructor(
 
         // Gestisci il pan solo se NON stai facendo un drag o resize
         if (!isEditMode) {
-            panGestureDetector.onTouchEvent(event)
+            gestureDetector.onTouchEvent(event)
             return true
         }
         val currentX = event.x
