@@ -55,6 +55,31 @@ data class MenuItem(
     @ColumnInfo(name = "id_user") val id_user: String
 )
 
+@Entity(
+    tableName = "OrderEntry",
+    primaryKeys = ["table_name", "menu_item_name", "id_user"],
+    foreignKeys = [
+        ForeignKey(
+            entity = Table_::class,
+            parentColumns = ["name", "id_user"],
+            childColumns = ["table_name", "id_user"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = MenuItem::class,
+            parentColumns = ["name", "id_user"],
+            childColumns = ["menu_item_name", "id_user"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
+data class OrderEntry(
+    @ColumnInfo(name = "table_name") val tableName: String,
+    @ColumnInfo(name = "menu_item_name") val menuItemName: String,
+    @ColumnInfo(name = "id_user") val id_user: String,
+    @ColumnInfo(name = "quantity") val quantity: Int
+)
+
 @Dao
 interface ArrangementDAO {
 
@@ -87,11 +112,17 @@ interface ArrangementDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTable(table: Table_)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrderEntries(orderEntries: List<OrderEntry>)
+
 
     // Updates
 
     @Update
     suspend fun updateTable(table: Table_)
+
+    @Update
+    suspend fun updateMenuItem(menuItem: MenuItem)
 
     // Deletes
 

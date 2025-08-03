@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Arrangementmanager" parent="Theme.Material3.DayNight.NoActionBar">
@@ -6,4 +7,11 @@
     </style>
 
     <style name="Theme.Arrangementmanager" parent="Base.Theme.Arrangementmanager" />
+
+    <!-- Stile personalizzato per il DialogFragment -->
+    <style name="MenuOrderDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
 </resources>

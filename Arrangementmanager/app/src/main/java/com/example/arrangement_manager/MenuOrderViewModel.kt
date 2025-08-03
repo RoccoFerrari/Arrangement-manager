@@ -37,8 +37,25 @@ class MenuOrderViewModel (
         _orderedItems.value = currentOrders
     }
 
-    fun sendOrder() {
-        // Qui implementerai la logica per inviare o salvare l'ordine
-        // Es. salvare la lista `orderedItems.value` nel database
+    fun sendOrder(tableName: String) {
+        viewModelScope.launch {
+            val orderEntriesToSave = _orderedItems.value.map { (menuItem, quantity) ->
+                OrderEntry(
+                    tableName = tableName,
+                    menuItemName = menuItem.name,
+                    id_user = userId,
+                    quantity = quantity
+                )
+            }
+            if (orderEntriesToSave.isNotEmpty()) {
+                arrangementDao.insertOrderEntries(orderEntriesToSave)
+            }
+
+            _orderedItems.value.forEach { (menuItem, quantity) ->
+                val newQuantity = menuItem.quantity - quantity
+                val updatedMenuItem = menuItem.copy(quantity = newQuantity)
+                arrangementDao.updateMenuItem(updatedMenuItem)
+            }
+        }
     }
 }

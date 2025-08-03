@@ -61,7 +61,7 @@
             app:argType="string"
             app:nullable="false" />
     </dialog>
-    <fragment
+    <dialog
         android:id="@+id/menuOrderDialogFragment"
         android:name="com.example.arrangement_manager.MenuOrderDialogFragment"
         android:label="MenuOrderDialogFragment">
@@ -74,5 +74,5 @@
             android:name="userEmail"
             app:argType="string" />
 
-    </fragment>
+    </dialog>
 </navigation>

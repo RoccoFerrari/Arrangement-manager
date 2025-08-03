@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class MenuOrderAdapter(
     private var menuItems: List<MenuItem>,
+    private var orderedQuantities: Map<MenuItem, Int>,
     private val onQuantityChanged: (MenuItem, Int) -> Unit
 ) : RecyclerView.Adapter<MenuOrderAdapter.MenuOrderViewHolder>() {
 
@@ -21,8 +22,9 @@ class MenuOrderAdapter(
         val removeButton: ImageButton = view.findViewById(R.id.button_remove)
     }
 
-    fun updateItems(newMenuItems: List<MenuItem>) {
+    fun updateItems(newMenuItems: List<MenuItem>, newOrderedQuantities: Map<MenuItem, Int>) {
         this.menuItems = newMenuItems
+        this.orderedQuantities = newOrderedQuantities
         notifyDataSetChanged()
     }
 
@@ -37,23 +39,22 @@ class MenuOrderAdapter(
         val menuItem = menuItems[position]
         holder.nameTextView.text = menuItem.name
         holder.priceTextView.text = "€${menuItem.price}"
-        holder.availableQuantityTextView.text = menuItem.quantity.toString()
-        var orderedQuantity = 0
+
+        val orderedQuantity = orderedQuantities[menuItem] ?: 0
+        val remainingQuantity = menuItem.quantity - orderedQuantity
+
         holder.orderedQuantityTextView.text = orderedQuantity.toString()
+        holder.availableQuantityTextView.text = remainingQuantity.toString()
 
         holder.addButton.setOnClickListener {
             if (orderedQuantity < menuItem.quantity) {
-                orderedQuantity++
-                holder.orderedQuantityTextView.text = orderedQuantity.toString()
-                onQuantityChanged(menuItem, orderedQuantity)
+                onQuantityChanged(menuItem, orderedQuantity + 1)
             }
         }
 
         holder.removeButton.setOnClickListener {
             if (orderedQuantity > 0) {
-                orderedQuantity--
-                holder.orderedQuantityTextView.text = orderedQuantity.toString()
-                onQuantityChanged(menuItem, orderedQuantity)
+                onQuantityChanged(menuItem, orderedQuantity - 1)
             }
         }
     }

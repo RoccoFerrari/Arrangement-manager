@@ -52,6 +52,7 @@ class AddMenuDialogFragment : DialogFragment() {
 
         binding.buttonSaveMenu.setOnClickListener {
             saveMenu()
+            dismiss()
         }
     }
 

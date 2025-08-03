@@ -30,6 +30,25 @@ class MenuOrderDialogFragment : DialogFragment() {
         return binding.root
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Imposta lo stile personalizzato che forza il dialog a non essere a schermo intero
+        setStyle(STYLE_NORMAL, R.style.MenuOrderDialogTheme)
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        dialog?.window?.let { window ->
+            val metrics = resources.displayMetrics
+            val width = metrics.widthPixels
+
+            val newWidth = (width * 0.85).toInt()
+
+            window.setLayout(newWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -38,20 +57,21 @@ class MenuOrderDialogFragment : DialogFragment() {
 
         viewModel = ViewModelProvider(this, factory)[MenuOrderViewModel::class.java]
 
-        binding.textViewTableNumber.text = "Tavolo N° ${args.table.name}"
+        binding.textViewTableNumber.text = (args.table.name)
 
         setupRecyclerView()
         observeViewModel()
 
         binding.buttonConfirmOrder.setOnClickListener {
-            viewModel.sendOrder()
+            viewModel.sendOrder(args.table.name)
             dismiss()
         }
     }
 
     private fun setupRecyclerView() {
         menuAdapter = MenuOrderAdapter(
-            menuItems = emptyList(), // I dati iniziali sono vuoti
+            menuItems = emptyList(),
+            orderedQuantities = emptyMap(),
             onQuantityChanged = { menuItem, quantity ->
                 viewModel.onQuantityChanged(menuItem, quantity)
             }
@@ -64,10 +84,15 @@ class MenuOrderDialogFragment : DialogFragment() {
 
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
-            // Osserviamo la lista di menu items dal ViewModel
             viewModel.menuItems.collectLatest { newMenuItems ->
-                // Quando la lista cambia, aggiorniamo l'adapter
-                menuAdapter.updateItems(newMenuItems)
+                val orderedQuantities = viewModel.orderedItems.value
+                menuAdapter.updateItems(newMenuItems, orderedQuantities)
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.orderedItems.collectLatest { newOrderedQuantities ->
+                val menuItems = viewModel.menuItems.value
+                menuAdapter.updateItems(menuItems, newOrderedQuantities)
             }
         }
     }
