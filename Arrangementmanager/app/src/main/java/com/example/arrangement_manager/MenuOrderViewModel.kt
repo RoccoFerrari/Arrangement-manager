@@ -1,5 +1,6 @@
 package com.example.arrangement_manager
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.arrangement_manager.RetrofitClient.apiService
@@ -7,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -26,8 +28,15 @@ class MenuOrderViewModel (
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    private val _isConfirmButtonEnabled = MutableStateFlow(false)
+    val isConfirmButtonEnabled: StateFlow<Boolean> = _isConfirmButtonEnabled.asStateFlow()
+
+    private val _orderConfirmed = MutableStateFlow(false)
+    val orderConfirmed: StateFlow<Boolean> = _orderConfirmed.asStateFlow()
+
     // Chiamata quando il ViewModel viene creato
     init {
+        Log.d("MenuOrderViewModel", "ViewModel inizializzato. Caricamento del menu...")
         loadMenuItems()
     }
 
@@ -60,6 +69,7 @@ class MenuOrderViewModel (
             currentOrders.remove(menuItem)
         }
         _orderedItems.value = currentOrders
+        _isConfirmButtonEnabled.value = currentOrders.isNotEmpty()
     }
 
     fun sendOrder(tableName: String) {
@@ -73,21 +83,22 @@ class MenuOrderViewModel (
                     quantity = quantity
                 )
             }
+
             if (newOrderEntries.isNotEmpty()) {
                 try {
                     val response = apiService.insertOrderEntries(userId, newOrderEntries)
                     if (response.isSuccessful) {
+                        Log.d("MenuOrderViewModel", "Ordine inviato con successo. Procedo con l'aggiornamento.")
                         updateMenuItemQuantities()
                     } else {
-                        // Gestione errori
+                        Log.e("MenuOrderViewModel", "Errore nell'invio dell'ordine: ${response.code()} - ${response.errorBody()?.string()}")
                         _errorMessage.value = "Errore nell'invio dell'ordine: ${response.code()}"
-                        _isLoading.value = false
                     }
                 } catch (e: IOException) {
                     _errorMessage.value = "Errore di connessione. Controlla la tua rete."
-                    _isLoading.value = false
                 } catch (e: HttpException) {
                     _errorMessage.value = "Errore HTTP: ${e.code()}"
+                } finally {
                     _isLoading.value = false
                 }
             } else {
@@ -100,27 +111,45 @@ class MenuOrderViewModel (
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            _orderedItems.value.forEach { (menuItem, quantity) ->
-                val newQuantity = menuItem.quantity - quantity
-                val updatedMenuItem = menuItem.copy(quantity = newQuantity)
 
-                try {
-                    val menuItemUpdate = MenuItemUpdate(
-                        price = updatedMenuItem.price,
-                        quantity = updatedMenuItem.quantity,
-                        description = updatedMenuItem.description
-                    )
-                    val response = apiService.updateMenuItem(userId, updatedMenuItem.name, menuItemUpdate)
-                    if (!response.isSuccessful) {
-                        _errorMessage.value = "Errore nell'aggiornamento del menu: ${response.code()}"
-                    }
-                } catch (e: Exception) {
-                    _errorMessage.value = "Errore nell'aggiornamento del menu: ${e.message}"
-                }
+            val updates = _orderedItems.value.map { (menuItem, quantity) ->
+                Log.d("MenuOrderViewModel", "Order received for ${menuItem.name}: ordered=${quantity}, available=${menuItem.quantity}")
+                val updatedItem = MenuItemUpdate(
+                    price = menuItem.price,
+                    quantity = menuItem.quantity - quantity,
+                    description = menuItem.description
+                )
+                Log.d("MenuOrderViewModel", "Updating item: ${menuItem.name}, with new quantity: ${updatedItem.quantity}")
+                menuItem.name to updatedItem
             }
-            // Ricarica il menu per sincronizzare la UI con il server dopo l'aggiornamento
-            loadMenuItems()
-            _isLoading.value = false
+
+            try {
+                for ((menuItemName, menuItemUpdate) in updates) {
+                    Log.d("MenuOrderViewModel", "Attempting to update ${menuItemName} to quantity: ${menuItemUpdate.quantity}")
+                    val response = apiService.updateMenuItem(userId, menuItemName, menuItemUpdate)
+                    if (!response.isSuccessful) {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e("MenuOrderViewModel", "Update failed for $menuItemName: ${response.code()} - Error: $errorBody")
+                        _errorMessage.value = "Errore nell'aggiornamento dell'articolo $menuItemName: ${response.code()}"
+                        _isLoading.value = false
+                        _orderConfirmed.value = false
+                        return@launch
+                    } else {
+                        Log.d("MenuOrderViewModel", "Update successful for $menuItemName.")
+                    }
+                }
+
+                loadMenuItems()
+                _orderConfirmed.value = true
+
+            } catch (e: Exception) {
+                _errorMessage.value = "Errore durante l'aggiornamento del menu: ${e.message}"
+                _isLoading.value = false
+                _orderConfirmed.value = false
+            } finally {
+                _orderedItems.value = emptyMap()
+                _isLoading.value = false
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.arrangement_manager
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,7 +64,6 @@ class MenuOrderDialogFragment : DialogFragment() {
 
         binding.buttonConfirmOrder.setOnClickListener {
             viewModel.sendOrder(args.table.name)
-            dismiss()
         }
     }
 
@@ -97,11 +97,18 @@ class MenuOrderDialogFragment : DialogFragment() {
             }
         }
 
-        // Osserva lo stato di caricamento
+        // Osserva lo stato del pulsante combinando isLoading e isConfirmButtonEnabled
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isConfirmButtonEnabled.collectLatest { isEnabled ->
+                // Controlla anche lo stato di caricamento per evitare clic multipli
+                binding.buttonConfirmOrder.isEnabled = isEnabled && !viewModel.isLoading.value
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collectLatest { isLoading ->
-                // Se isLoading è true, mostra una ProgressBar o disabilita il pulsante
-                binding.buttonConfirmOrder.isEnabled = !isLoading
+                // Aggiorna lo stato del pulsante in base a isConfirmButtonEnabled e isLoading
+                binding.buttonConfirmOrder.isEnabled = viewModel.isConfirmButtonEnabled.value && !isLoading
             }
         }
 
@@ -110,6 +117,14 @@ class MenuOrderDialogFragment : DialogFragment() {
             viewModel.errorMessage.collectLatest { errorMessage ->
                 if (errorMessage != null) {
                     Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.orderConfirmed.collectLatest { confirmed ->
+                if (confirmed) {
+                    dismiss()
                 }
             }
         }

@@ -1,6 +1,5 @@
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.arrangement_manager.ArrangementDAO
 import com.example.arrangement_manager.TableArrangementViewModel
 
 class TableArrangementViewModelFactory(

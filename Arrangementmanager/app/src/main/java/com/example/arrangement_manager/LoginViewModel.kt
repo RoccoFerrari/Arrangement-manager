@@ -20,12 +20,14 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loginOrRegister(email: String, password: String) {
         viewModelScope.launch(Dispatchers.IO) {
+            // Reimposta lo stato all'inizio di ogni tentativo
             _userSessionState.value =
                 _userSessionState.value.copy(isLoading = true, errorMessage = null)
             val user = User(email = email, password = password)
             try {
-                // Prova ad eseguire il login
+                // Prova a eseguire il login
                 val loginResponse = apiService.loginUser(user)
+
                 if (loginResponse.isSuccessful) {
                     val loginBody = loginResponse.body()
                     val loggedInUser = loginBody?.user
@@ -42,23 +44,29 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                 } else {
-                    // Gestione degli errori
                     when (loginResponse.code()) {
-                        // Credenziali non valide
+                        // Credenziali non valide (l'email esiste ma la password è sbagliata)
                         401 -> {
                             _userSessionState.value = _userSessionState.value.copy(
                                 isLoading = false,
                                 errorMessage = "Email o password errati."
                             )
                         }
-                        // Errore generico, prova a registrarsi
-                        else -> {
+                        // Utente non trovato (l'email non esiste), prova a registrarlo
+                        404 -> {
                             tryRegisterUser(user)
+                        }
+                        // Errore generico
+                        else -> {
+                            _userSessionState.value = _userSessionState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Errore di login: ${loginResponse.message()}"
+                            )
                         }
                     }
                 }
             } catch (e: HttpException) {
-                // Not Found
+                // Gestione dell'eccezione HTTP: Not Found (404)
                 if (e.code() == 404) {
                     tryRegisterUser(user)
                 } else {
@@ -68,13 +76,13 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } catch (e: IOException) {
-                // Errore di rete
+                // Errore di rete (es. disconnessione)
                 _userSessionState.value = _userSessionState.value.copy(
                     isLoading = false,
                     errorMessage = "Errore di connessione. Controlla la tua rete."
                 )
             } catch (e: Exception) {
-                // Errore generico
+                // Errore generico inaspettato
                 _userSessionState.value = _userSessionState.value.copy(
                     isLoading = false,
                     errorMessage = "Errore inaspettato: ${e.message}"
@@ -84,7 +92,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun tryRegisterUser(user: User) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _userSessionState.value = _userSessionState.value.copy(isLoading = true, errorMessage = null)
             try {
                 // Registrazione

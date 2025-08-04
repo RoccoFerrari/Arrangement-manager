@@ -24,17 +24,9 @@
             app:argType="string"
             app:nullable="false" />
         <action
-            android:id="@+id/action_selectionMode_to_kitchen"
-            app:destination="@id/kitchen" />
-        <action
             android:id="@+id/action_selectionMode_to_tableArrangementFragment"
             app:destination="@id/tableArrangementFragment" />
     </fragment>
-    <fragment
-        android:id="@+id/kitchen"
-        android:name="com.example.arrangement_manager.kitchen"
-        android:label="fragment_kitchen"
-        tools:layout="@layout/fragment_kitchen" />
     <fragment
         android:id="@+id/tableArrangementFragment"
         android:name="com.example.arrangement_manager.TableArrangementFragment"

@@ -1,5 +1,7 @@
 # Attivare Ambiente Virtuale: source .venv/bin/activate
+# Compilare: .venv/bin/python3 server.py
 
+import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
@@ -7,8 +9,10 @@ from sqlalchemy import ForeignKey, Column, String, Float, Integer
 
 app = Flask(__name__)
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 # Configurazione del database (SQLite)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///arrangement_manager.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'arrangement_manager.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -132,15 +136,23 @@ def register_user():
 
 @app.route('/users/login', methods=['POST'])
 def login_user():
-    """Endpoint per il login (= getUserByEmail, emailExist)"""
+    """Endpoint per il login"""
     data = request.json
     email = data.get('email')
     password = data.get('password')
 
     user = User.query.get(email)
-    if user and user.password == password:
+
+    # Caso 1: L'utente non esiste nel database
+    if not user:
+        return jsonify({"error": "Utente non trovato"}), 404 # Utente non trovato
+
+    # Caso 2: L'utente esiste, controlliamo la password
+    if user.password == password:
         return jsonify({"message": "Login avvenuto con successo", "user": user.to_dict()}), 200
-    return jsonify({"error": "Credenziali non valide"}), 401
+    else:
+        # Caso 3: L'utente esiste ma la password è sbagliata
+        return jsonify({"error": "Credenziali non valide"}), 401 # Password errata
 
 # --- Gestione Tavoli ---
 @app.route('/users/<string:userId>/tables', methods=['GET'])
@@ -273,15 +285,17 @@ def delete_menu_item(userId, name):
     db.session.commit()
     return jsonify({"message": "Elemento del menu eliminato con successo"}), 200
 
-# --- Gestione Ordini ---
+# --- Gestione ordini ---
 @app.route('/users/<string:userId>/orders', methods=['POST'])
 def insert_order_entries(userId):
-    """Endpoint per inserire una lista di voci d'ordine (= insertOrderEntries)."""
+    """Endpoint per inserire o aggiornare voci d'ordine."""
     order_entries_data = request.json
     if not isinstance(order_entries_data, list):
         return jsonify({"error": "Il corpo della richiesta deve essere una lista di ordini"}), 400
     
-    new_entries = []
+    # Non usiamo bulk_save_objects.
+    # L'aggiornamento/inserimento sarà gestito voce per voce.
+    
     for entry_data in order_entries_data:
         table_name = entry_data.get('table_name')
         menu_item_name = entry_data.get('menu_item_name')
@@ -290,24 +304,33 @@ def insert_order_entries(userId):
         if not all([table_name, menu_item_name, quantity is not None]):
             return jsonify({"error": "Dati dell'ordine incompleti"}), 400
 
-        # Verifica che il tavolo e l'elemento del menu esistano per l'utente
         if not Table.query.get((table_name, userId)):
             return jsonify({"error": f"Tavolo '{table_name}' non trovato per l'utente '{userId}'"}), 404
         if not MenuItem.query.get((menu_item_name, userId)):
             return jsonify({"error": f"Elemento menu '{menu_item_name}' non trovato per l'utente '{userId}'"}), 404
 
-        new_entry = OrderEntry(
-            table_name=table_name,
-            menu_item_name=menu_item_name,
-            id_user=userId,
-            quantity=quantity
-        )
-        new_entries.append(new_entry)
-
-    db.session.bulk_save_objects(new_entries)
+        # Cerca se esiste già un ordine per questo tavolo, piatto e utente
+        existing_order = OrderEntry.query.get((table_name, menu_item_name, userId))
+        
+        if existing_order:
+            # Se l'ordine esiste, aggiorna la quantità
+            existing_order.quantity += quantity
+        else:
+            # Se non esiste, crea un nuovo ordine
+            new_entry = OrderEntry(
+                table_name=table_name,
+                menu_item_name=menu_item_name,
+                id_user=userId,
+                quantity=quantity
+            )
+            db.session.add(new_entry)
+            
+    # Salva tutte le modifiche in un'unica transazione
     db.session.commit()
-    return jsonify([entry.to_dict() for entry in new_entries]), 201
-
+    
+    # Restituisce gli ordini aggiornati per quel tavolo per conferma
+    updated_entries = OrderEntry.query.filter_by(id_user=userId, table_name=table_name).all()
+    return jsonify([entry.to_dict() for entry in updated_entries]), 201
 
 if __name__ == '__main__':
     # Creazione delle tabelle del database se non esistono

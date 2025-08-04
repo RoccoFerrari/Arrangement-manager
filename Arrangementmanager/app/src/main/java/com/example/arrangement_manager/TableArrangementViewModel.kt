@@ -27,7 +27,6 @@ class TableArrangementViewModel(
     private val _uiState = MutableStateFlow(TableUiState())
     val uiState: StateFlow<TableUiState> = _uiState.asStateFlow()
 
-    // Coroutine per raccogliere i tavoli dal DAO
     // Eseguita quando il ViewModel viene creato
     init {
         loadTables()

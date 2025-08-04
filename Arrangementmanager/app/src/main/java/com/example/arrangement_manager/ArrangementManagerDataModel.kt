@@ -1,7 +1,9 @@
 package com.example.arrangement_manager
 
+import android.os.Parcelable
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import kotlinx.parcelize.Parcelize
 
 // Il server Flask restituisce un oggetto 'user'
 @JsonClass(generateAdapter = true)
@@ -16,6 +18,7 @@ data class User(
     val password: String
 )
 
+@Parcelize
 @JsonClass(generateAdapter = true)
 data class Table(
     val name: String,
@@ -24,7 +27,7 @@ data class Table(
     @Json(name = "y_coordinate") val yCoordinate: Float,
     val width: Float,
     val height: Float
-)
+) : Parcelable
 
 // Classe per le richieste PUT (Flask accetta solo campi da aggiornare)
 @JsonClass(generateAdapter = true)
