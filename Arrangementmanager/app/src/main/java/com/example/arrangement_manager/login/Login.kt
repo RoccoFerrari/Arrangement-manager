@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.login
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.arrangement_manager.R
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 

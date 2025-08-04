@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.selection_mode
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,6 +8,7 @@ import android.widget.Button
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.arrangement_manager.R
 
 class SelectionMode : Fragment() {
 

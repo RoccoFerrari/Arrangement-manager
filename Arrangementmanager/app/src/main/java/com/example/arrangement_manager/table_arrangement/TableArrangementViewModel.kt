@@ -1,11 +1,10 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.table_arrangement
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.util.copy
-import com.example.arrangement_manager.RetrofitClient.apiService
-import kotlinx.coroutines.Dispatchers
+import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
+import com.example.arrangement_manager.retrofit.Table
+import com.example.arrangement_manager.retrofit.TableUpdate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

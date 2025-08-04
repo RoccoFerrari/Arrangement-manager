@@ -1,6 +1,7 @@
+package com.example.arrangement_manager.table_arrangement
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.arrangement_manager.TableArrangementViewModel
 
 class TableArrangementViewModelFactory(
     private val userEmail: String

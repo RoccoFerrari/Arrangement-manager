@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/login"
-        android:name="com.example.arrangement_manager.Login"
+        android:name="com.example.arrangement_manager.login.Login"
         android:label="fragment_login"
         tools:layout="@layout/fragment_login" >
         <action
@@ -16,7 +16,7 @@
     </fragment>
     <fragment
         android:id="@+id/selectionMode"
-        android:name="com.example.arrangement_manager.SelectionMode"
+        android:name="com.example.arrangement_manager.selection_mode.SelectionMode"
         android:label="fragment_selection_mode"
         tools:layout="@layout/fragment_selection_mode" >
         <argument
@@ -29,7 +29,7 @@
     </fragment>
     <fragment
         android:id="@+id/tableArrangementFragment"
-        android:name="com.example.arrangement_manager.TableArrangementFragment"
+        android:name="com.example.arrangement_manager.table_arrangement.TableArrangementFragment"
         android:label="TableArrangementFragment"
         tools:layout="@layout/fragment_table_arrangement" >
         <argument
@@ -45,7 +45,7 @@
     </fragment>
     <dialog
         android:id="@+id/addMenuDialogFragment"
-        android:name="com.example.arrangement_manager.AddMenuDialogFragment"
+        android:name="com.example.arrangement_manager.add_menu.AddMenuDialogFragment"
         android:label="dialog_add_menu"
         tools:layout="@layout/dialog_add_menu">
         <argument
@@ -55,12 +55,12 @@
     </dialog>
     <dialog
         android:id="@+id/menuOrderDialogFragment"
-        android:name="com.example.arrangement_manager.MenuOrderDialogFragment"
+        android:name="com.example.arrangement_manager.menu_order.MenuOrderDialogFragment"
         android:label="MenuOrderDialogFragment">
 
         <argument
             android:name="table"
-            app:argType="com.example.arrangement_manager.Table" />
+            app:argType="com.example.arrangement_manager.retrofit.Table" />
 
         <argument
             android:name="userEmail"

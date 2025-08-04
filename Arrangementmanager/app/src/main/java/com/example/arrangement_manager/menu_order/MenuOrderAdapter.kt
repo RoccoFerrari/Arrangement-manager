@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.menu_order
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,6 +6,8 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.arrangement_manager.R
+import com.example.arrangement_manager.retrofit.MenuItem
 
 class MenuOrderAdapter(
     private var menuItems: List<MenuItem>,

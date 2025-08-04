@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.login
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.example.arrangement_manager.RetrofitClient.apiService
+import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
+import com.example.arrangement_manager.retrofit.User
 import retrofit2.HttpException
 import java.io.IOException
 

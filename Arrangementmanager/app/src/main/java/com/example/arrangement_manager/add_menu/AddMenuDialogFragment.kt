@@ -1,18 +1,16 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.add_menu
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import com.example.arrangement_manager.databinding.DialogAddMenuBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.example.arrangement_manager.retrofit.MenuItem
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 

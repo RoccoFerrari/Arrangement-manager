@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.menu_order
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

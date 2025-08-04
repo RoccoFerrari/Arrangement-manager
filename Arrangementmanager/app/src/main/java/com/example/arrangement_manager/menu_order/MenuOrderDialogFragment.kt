@@ -1,7 +1,6 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.menu_order
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.arrangement_manager.R
 import com.example.arrangement_manager.databinding.DialogOrderMenuBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch

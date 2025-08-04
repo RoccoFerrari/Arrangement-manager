@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.table_arrangement
 
 import android.content.Context
 import android.util.AttributeSet
@@ -13,6 +13,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withMatrix
+import com.example.arrangement_manager.retrofit.Table
 
 // Interfaccia di callback per comunicare le modifiche a un tavolo
 interface OnTableUpdatedListener {
@@ -55,7 +56,7 @@ class TableArrangementView @JvmOverloads constructor(
     private enum class Mode {
         NONE, DRAG, RESIZE, PAN
     }
-    private var mode:  Mode = Mode.NONE
+    private var mode: Mode = Mode.NONE
 
     // ----------------------------------------
     // Oggetti Paint per disegnare i tavoli

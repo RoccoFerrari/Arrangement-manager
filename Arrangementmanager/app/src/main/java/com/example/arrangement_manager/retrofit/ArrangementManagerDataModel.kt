@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.retrofit
 
 import android.os.Parcelable
 import com.squareup.moshi.Json

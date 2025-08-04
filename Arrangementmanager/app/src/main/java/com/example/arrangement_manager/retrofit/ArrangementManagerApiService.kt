@@ -1,4 +1,4 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.retrofit
 
 import retrofit2.Response
 import retrofit2.http.Body

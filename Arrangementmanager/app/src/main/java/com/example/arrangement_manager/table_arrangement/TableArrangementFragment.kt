@@ -1,6 +1,5 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.table_arrangement
 
-import TableArrangementViewModelFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,13 +7,14 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.fragment.navArgs
+import com.example.arrangement_manager.R
+import com.example.arrangement_manager.retrofit.Table
 
 class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClickedListener {
     private val args: TableArrangementFragmentArgs by navArgs()

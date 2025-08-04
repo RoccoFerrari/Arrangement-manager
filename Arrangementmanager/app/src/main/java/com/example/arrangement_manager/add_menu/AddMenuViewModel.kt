@@ -1,9 +1,10 @@
-package com.example.arrangement_manager
+package com.example.arrangement_manager.add_menu
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.arrangement_manager.RetrofitClient.apiService
+import com.example.arrangement_manager.retrofit.MenuItem
+import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
