@@ -7,10 +7,13 @@ import android.view.ViewGroup
 import android.view.Window
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import com.example.arrangement_manager.databinding.DialogAddMenuBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class AddMenuDialogFragment : DialogFragment() {
@@ -18,14 +21,15 @@ class AddMenuDialogFragment : DialogFragment() {
     private val binding get() = _binding!!
     private val args: AddMenuDialogFragmentArgs by navArgs()
 
-    // Lista temporanea per memorizzare i prodotti prima del salvataggio
-    private val newMenuItems = mutableListOf<MenuItem>()
+    private val viewModel: AddMenuViewModel by viewModels {
+        AddMenuViewModelFactory(args.userEmail)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = DialogAddMenuBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -46,12 +50,27 @@ class AddMenuDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.uiState.collectLatest { uiState ->
+                // Caricamento
+                binding.buttonAddItem.isEnabled = !uiState.isLoading
+                binding.buttonSaveMenu.isEnabled = !uiState.isLoading
+
+                // Messaggi di successo/errore
+                if (uiState.errorMessage != null) {
+                    Toast.makeText(requireContext(), uiState.errorMessage, Toast.LENGTH_SHORT).show()
+                }
+                if (uiState.successMessage != null) {
+                    Toast.makeText(requireContext(), uiState.successMessage, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
         binding.buttonAddItem.setOnClickListener {
             addItem()
         }
 
         binding.buttonSaveMenu.setOnClickListener {
-            saveMenu()
             dismiss()
         }
     }
@@ -81,27 +100,14 @@ class AddMenuDialogFragment : DialogFragment() {
             price = price,
             quantity = quantity,
             description = description,
-            id_user = userId
+            idUser = userId
         )
-        newMenuItems.add(newMenuItem)
+        viewModel.insertMenuItem(newMenuItem)
 
         binding.editTextName.text?.clear()
         binding.editTextPrice.text?.clear()
         binding.editTextQuantity.text?.clear()
         binding.editTextDescription.text?.clear()
-    }
-
-    private fun saveMenu() {
-        if(newMenuItems.isEmpty()) {
-            Toast.makeText(requireContext(), "Please add at least one item", Toast.LENGTH_SHORT).show()
-            return
-        }
-        CoroutineScope(Dispatchers.IO).launch {
-            val menuItemDao = (requireActivity().application as YourApplicationClass).arrangementDAO
-            newMenuItems.forEach { menuItem ->
-                menuItemDao.insertMenu(menuItem)
-            }
-        }
     }
 
     override fun onDestroy() {

@@ -14,7 +14,7 @@ import kotlinx.parcelize.Parcelize
 import android.os.Parcelable
 
 @Entity(tableName = "User")
-data class User(
+data class User_(
     @PrimaryKey @ColumnInfo(name = "email") val email: String,
     @ColumnInfo(name = "password") val password: String
 )
@@ -23,7 +23,7 @@ data class User(
 @Entity(primaryKeys = ["name", "id_user"],
     tableName = "Table_",
     foreignKeys = [ForeignKey(
-        entity = User::class,
+        entity = User_::class,
         parentColumns = ["email"],
         childColumns = ["id_user"],
         onDelete = ForeignKey.CASCADE
@@ -41,13 +41,13 @@ data class Table_(
 @Entity(primaryKeys = ["name", "id_user"],
     tableName = "Menu",
     foreignKeys = [ForeignKey(
-        entity = User::class,
+        entity = User_::class,
         parentColumns = ["email"],
         childColumns = ["id_user"],
         onDelete = ForeignKey.CASCADE
     )]
 )
-data class MenuItem(
+data class MenuItem_(
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "price") val price: Float,
     @ColumnInfo(name = "quantity") val quantity: Int,
@@ -66,14 +66,14 @@ data class MenuItem(
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = MenuItem::class,
+            entity = MenuItem_::class,
             parentColumns = ["name", "id_user"],
             childColumns = ["menu_item_name", "id_user"],
             onDelete = ForeignKey.CASCADE
         )
     ]
 )
-data class OrderEntry(
+data class OrderEntry_(
     @ColumnInfo(name = "table_name") val tableName: String,
     @ColumnInfo(name = "menu_item_name") val menuItemName: String,
     @ColumnInfo(name = "id_user") val id_user: String,

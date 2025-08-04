@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -52,9 +53,7 @@ class MenuOrderDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val dao = (requireActivity().application as YourApplicationClass).arrangementDAO
-        val factory = MenuOrderViewModelFactory(dao, args.userEmail)
-
+        val factory = MenuOrderViewModelFactory(args.userEmail)
         viewModel = ViewModelProvider(this, factory)[MenuOrderViewModel::class.java]
 
         binding.textViewTableNumber.text = (args.table.name)
@@ -83,16 +82,35 @@ class MenuOrderDialogFragment : DialogFragment() {
     }
 
     private fun observeViewModel() {
+        // Osserva la lista di menu items
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.menuItems.collectLatest { newMenuItems ->
                 val orderedQuantities = viewModel.orderedItems.value
                 menuAdapter.updateItems(newMenuItems, orderedQuantities)
             }
         }
+        // Osserva le quantità ordinate
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.orderedItems.collectLatest { newOrderedQuantities ->
                 val menuItems = viewModel.menuItems.value
                 menuAdapter.updateItems(menuItems, newOrderedQuantities)
+            }
+        }
+
+        // Osserva lo stato di caricamento
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.isLoading.collectLatest { isLoading ->
+                // Se isLoading è true, mostra una ProgressBar o disabilita il pulsante
+                binding.buttonConfirmOrder.isEnabled = !isLoading
+            }
+        }
+
+        // Osserva i messaggi di errore
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.errorMessage.collectLatest { errorMessage ->
+                if (errorMessage != null) {
+                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_LONG).show()
+                }
             }
         }
     }

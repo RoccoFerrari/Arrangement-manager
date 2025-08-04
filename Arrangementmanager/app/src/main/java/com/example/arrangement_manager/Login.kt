@@ -11,30 +11,14 @@ import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [Login.newInstance] factory method to
- * create an instance of this fragment.
- */
 class Login : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
     private val viewModel: LoginViewModel by viewModels {
         LoginViewModelFactory(
-            requireActivity().application, // Passa l'istanza di Application
-            (requireActivity().application as YourApplicationClass).arrangementDAO
+            requireActivity().application
         )
     }
 
@@ -46,14 +30,6 @@ class Login : Fragment() {
 
     // Dichiarazione button next
     private lateinit var nextButton: Button
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -77,12 +53,13 @@ class Login : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.userSessionState.collectLatest { state ->
                 if (state.isLoading) {
-                    nextButton.isEnabled = false // Disabilita il pulsante durante il caricamento
+                    // Pulsante disabilitato durante il login
+                    nextButton.isEnabled = false
                 } else {
-                    nextButton.isEnabled = true // Riabilita il pulsante
+                    nextButton.isEnabled = true
                 }
 
-                // Gestisci i messaggi di errore
+                // Messaggi di errore
                 if (state.errorMessage != null) {
                     Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_LONG).show()
                 }
@@ -90,7 +67,7 @@ class Login : Fragment() {
                 if (state.isLoggedIn) {
                     Toast.makeText(requireContext(), "Accesso riuscito per ${state.email}!", Toast.LENGTH_SHORT).show()
                     val action = LoginDirections.actionLoginToSelectionMode(state.email!!)
-                    findNavController().navigate(action)
+                    navController.navigate(action)
                 }
             }
         }
@@ -112,25 +89,5 @@ class Login : Fragment() {
 
             viewModel.loginOrRegister(email, password)
         }
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment Login.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            Login().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
     }
 }

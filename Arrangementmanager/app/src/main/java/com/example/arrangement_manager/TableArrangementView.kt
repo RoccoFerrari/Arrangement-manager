@@ -12,14 +12,15 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import androidx.core.graphics.toColorInt
+import androidx.core.graphics.withMatrix
 
 // Interfaccia di callback per comunicare le modifiche a un tavolo
 interface OnTableUpdatedListener {
-    fun onTableUpdated(table: Table_)
+    fun onTableUpdated(table: Table)
 }
 
 interface OnTableClickedListener {
-    fun onTableClicked(table: Table_)
+    fun onTableClicked(table: Table)
 }
 
 
@@ -31,8 +32,8 @@ class TableArrangementView @JvmOverloads constructor(
 
     // ----------------------------------------
     // Variabili per la gestione dei tavoli
-    private var tables: List<Table_> = emptyList()
-    private var selectedTable: Table_? = null
+    private var tables: List<Table> = emptyList()
+    private var selectedTable: Table? = null
     private var lastX: Float = 0f
     private var lastY: Float = 0f
     private val handleRadius = 25f
@@ -158,7 +159,7 @@ class TableArrangementView @JvmOverloads constructor(
     // ----------------------------------------
 
     // Metodo per aggiornare la lista dei tavoli
-    fun setTables(newTables: List<Table_>) {
+    fun setTables(newTables: List<Table>) {
         this.tables = newTables
         if(isEditMode)
             selectedTable = tables.find { it.name == selectedTable?.name }
@@ -181,7 +182,7 @@ class TableArrangementView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun getSelectedTable() : Table_? {
+    fun getSelectedTable() : Table? {
         return selectedTable
     }
 
@@ -190,33 +191,31 @@ class TableArrangementView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         // Applica trasformazioni di zoom e pan
-        canvas.save()
-        canvas.concat(matrix)
+        canvas.withMatrix(matrix) {
+            // Itera sulla lista dei tavoli e disegna ogni rettangolo
+            tables.forEach { table ->
+                reusableRect.set(
+                    table.xCoordinate.toFloat(),
+                    table.yCoordinate.toFloat(),
+                    table.xCoordinate.toFloat() + table.width.toFloat(),
+                    table.yCoordinate.toFloat() + table.height.toFloat()
+                )
+                // Disegna il rettangolo
+                drawRect(reusableRect, tablePaint)
+                val textX = reusableRect.centerX()
+                val textY =
+                    reusableRect.centerY() - ((tableText.descent() + tableText.ascent()) / 2)
+                drawText(table.name, textX, textY, tableText)
+                // Disegna il bordo e il maniglione del rettangolo
+                if (isEditMode && table.name == selectedTable?.name) {
+                    drawRect(reusableRect, selectedTablePaint)
 
-        // Itera sulla lista dei tavoli e disegna ogni rettangolo
-        tables.forEach { table ->
-            reusableRect.set(
-                table.x_coordinate.toFloat(),
-                table.y_coordinate.toFloat(),
-                table.x_coordinate.toFloat() + table.width.toFloat(),
-                table.y_coordinate.toFloat() + table.height.toFloat()
-            )
-            // Disegna il rettangolo
-            canvas.drawRect(reusableRect, tablePaint)
-            val textX = reusableRect.centerX()
-            val textY = reusableRect.centerY() - ((tableText.descent() + tableText.ascent()) / 2)
-            canvas.drawText(table.name, textX, textY, tableText)
-            // Disegna il bordo e il maniglione del rettangolo
-            if(isEditMode && table.name == selectedTable?.name) {
-                canvas.drawRect(reusableRect, selectedTablePaint)
-
-                val handleX = reusableRect.right
-                val handleY = reusableRect.bottom
-                canvas.drawCircle(handleX, handleY, handleRadius, resizeHandlePaint)
+                    val handleX = reusableRect.right
+                    val handleY = reusableRect.bottom
+                    drawCircle(handleX, handleY, handleRadius, resizeHandlePaint)
+                }
             }
         }
-        // ripristina la tela allo stato originale
-        canvas.restore()
     }
 
     // Gestione degli eventi touch
@@ -267,8 +266,8 @@ class TableArrangementView @JvmOverloads constructor(
                 when(mode) {
                     Mode.DRAG -> {
                         val updatedTable = selectedTable!!.copy(
-                            x_coordinate = selectedTable!!.x_coordinate + deltaX,
-                            y_coordinate = selectedTable!!.y_coordinate + deltaY
+                            xCoordinate = selectedTable!!.xCoordinate + deltaX,
+                            yCoordinate = selectedTable!!.yCoordinate + deltaY
                         )
                         tables = tables.map { (if (it.name == updatedTable.name) updatedTable else it) }
                         selectedTable = updatedTable
@@ -308,23 +307,23 @@ class TableArrangementView @JvmOverloads constructor(
         return false
     }
 
-    private fun findTableAtPosition(x: Float, y: Float): Table_? {
+    private fun findTableAtPosition(x: Float, y: Float): Table? {
         for(i in tables.indices.reversed()) {
             val table = tables[i]
-            if(x >= table.x_coordinate && x <= table.x_coordinate + table.width &&
-                y >= table.y_coordinate && y <= table.y_coordinate + table.height) {
+            if(x >= table.xCoordinate && x <= table.xCoordinate + table.width &&
+                y >= table.yCoordinate && y <= table.yCoordinate + table.height) {
                 return table
             }
         }
         return null
     }
 
-    private fun isNearResizeHandle(table: Table_, x: Float, y: Float): Boolean {
+    private fun isNearResizeHandle(table: Table, x: Float, y: Float): Boolean {
         val hitArea = RectF(
-            table.x_coordinate + table.width - handleRadius,
-            table.y_coordinate + table.height - handleRadius,
-            table.x_coordinate + table.width + handleRadius,
-            table.y_coordinate + table.height + handleRadius
+            table.xCoordinate + table.width - handleRadius,
+            table.yCoordinate + table.height - handleRadius,
+            table.xCoordinate + table.width + handleRadius,
+            table.yCoordinate + table.height + handleRadius
         )
         return hitArea.contains(x, y)
     }

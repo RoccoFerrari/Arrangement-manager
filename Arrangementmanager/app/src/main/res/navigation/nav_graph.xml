@@ -68,7 +68,7 @@
 
         <argument
             android:name="table"
-            app:argType="com.example.arrangement_manager.Table_" />
+            app:argType="com.example.arrangement_manager.Table" />
 
         <argument
             android:name="userEmail"

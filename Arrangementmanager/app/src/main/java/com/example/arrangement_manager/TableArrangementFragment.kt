@@ -30,7 +30,6 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
     // Questo ViewModel gestisce la logica e i dati specifici dei tavoli.
     private val tableViewModel: TableArrangementViewModel by viewModels {
         TableArrangementViewModelFactory(
-            (requireActivity().application as YourApplicationClass).arrangementDAO,
             args.userEmail
         )
     }
@@ -59,8 +58,8 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
 
         // Ogni volta che la lista cambia la vista viene ridisegnata
         viewLifecycleOwner.lifecycleScope.launch {
-            tableViewModel.tables.collectLatest { tables ->
-                tableArrangementView.setTables(tables)
+            tableViewModel.uiState.collectLatest { uiState ->
+                tableArrangementView.setTables(uiState.tables)
             }
         }
 
@@ -119,14 +118,13 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
     }
 
     // Implementazione del metodo di callback
-    override fun onTableUpdated(table: Table_) {
+    override fun onTableUpdated(table: Table) {
         // Aggiorna il tavolo nel ViewModel ogni volta che viene spostato o
         // ridimensionato
         tableViewModel.updateTable(table)
     }
 
-    override fun onTableClicked(table: Table_) {
-
+    override fun onTableClicked(table: Table) {
         // Naviga al DialogFragment passando gli argomenti con Safe Args
         val action = TableArrangementFragmentDirections.actionTableArrangementFragmentToMenuOrderDialogFragment(table, args.userEmail)
         findNavController().navigate(action)

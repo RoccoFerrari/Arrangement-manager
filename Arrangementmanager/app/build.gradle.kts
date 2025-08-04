@@ -44,6 +44,7 @@ android {
 dependencies {
 
     implementation(libs.androidx.ui.graphics.android)
+    implementation(libs.androidx.room.runtime.android)
     val room_version="2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
     kapt("androidx.room:room-compiler:$room_version")
@@ -59,6 +60,14 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
     implementation("androidx.activity:activity-ktx:1.7.2")
     implementation("androidx.fragment:fragment-ktx:1.5.7")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    val moshi_version="1.14.0"
+    implementation("com.squareup.moshi:moshi:$moshi_version")
+    implementation("com.squareup.moshi:moshi-kotlin:$moshi_version")
+    kapt("com.squareup.moshi:moshi-kotlin-codegen:$moshi_version")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
 
     implementation(libs.androidx.core.ktx)
