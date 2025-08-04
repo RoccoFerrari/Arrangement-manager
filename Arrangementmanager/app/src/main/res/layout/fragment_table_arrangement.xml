@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".table_arrangement.TableArrangementFragment">
 
-    <com.example.arrangement_manager.TableArrangementView
+    <com.example.arrangement_manager.table_arrangement.TableArrangementView
         android:id="@+id/tableArrangementView"
         android:layout_width="412dp"
         android:layout_height="595dp"
