@@ -38,7 +38,7 @@ class SelectionMode : Fragment() {
         }
 
         kitchenButton.setOnClickListener {
-            // navController.navigate(R.id.action_selectionMode_to_kitchen)
+            navController.navigate(R.id.action_selectionMode_to_kitchenActivity)
         }
     }
 }

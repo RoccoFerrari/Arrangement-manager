@@ -58,7 +58,7 @@ class MenuOrderDialogFragment : DialogFragment() {
         observeViewModel()
 
         binding.buttonConfirmOrder.setOnClickListener {
-            viewModel.sendOrder(args.table.name)
+            viewModel.sendOrder(args.table)
         }
     }
 

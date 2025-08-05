@@ -26,6 +26,9 @@
         <action
             android:id="@+id/action_selectionMode_to_tableArrangementFragment"
             app:destination="@id/tableArrangementFragment" />
+        <action
+            android:id="@+id/action_selectionMode_to_kitchenActivity"
+            app:destination="@id/kitchenActivity" />
     </fragment>
     <fragment
         android:id="@+id/tableArrangementFragment"
@@ -67,4 +70,9 @@
             app:argType="string" />
 
     </dialog>
+    <activity
+        android:id="@+id/kitchenActivity"
+        android:name="com.example.arrangement_manager.kitchen.KitchenActivity"
+        android:label="activity_kitchen"
+        tools:layout="@layout/activity_order_kitchen" />
 </navigation>
