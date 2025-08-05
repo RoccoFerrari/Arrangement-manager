@@ -5,11 +5,9 @@
     android:id="@+id/frameLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp"
     android:background="@android:color/white"
     tools:context=".login.Login">
 
-    <!-- Titolo della schermata di login -->
     <TextView
         android:id="@+id/login_title"
         android:layout_width="wrap_content"
@@ -25,7 +23,6 @@
         app:layout_constraintVertical_chainStyle="packed"
         android:layout_marginBottom="48dp" />
 
-    <!-- Campo per l'email migliorato -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayoutEmail"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -40,6 +37,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/login_title"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
         android:layout_marginBottom="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -50,7 +49,6 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Campo per la password migliorato -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayoutPassword"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -65,6 +63,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textInputLayoutEmail"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
         android:layout_marginBottom="32dp">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -75,7 +75,6 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Pulsante "Next" migliorato -->
     <Button
         android:id="@+id/login_next"
         android:layout_width="0dp"
@@ -88,6 +87,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textInputLayoutPassword" />
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayoutPassword"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

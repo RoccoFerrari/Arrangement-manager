@@ -32,12 +32,6 @@ class MenuOrderDialogFragment : DialogFragment() {
         return binding.root
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Imposta lo stile personalizzato che forza il dialog a non essere a schermo intero
-        setStyle(STYLE_NORMAL, R.style.MenuOrderDialogTheme)
-    }
-
     override fun onStart() {
         super.onStart()
 

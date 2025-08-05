@@ -1,5 +1,5 @@
-# Attivare Ambiente Virtuale: source .venv/bin/activate
-# Compilare: .venv/bin/python3 server.py
+# Attivare Ambiente Virtuale: source venv/bin/activate
+# Compilare: python3 server.py
 
 import os
 from flask import Flask, request, jsonify
@@ -62,7 +62,7 @@ class MenuItem(db.Model):
     id_user = db.Column(db.String, db.ForeignKey('User.email', ondelete='CASCADE'), primary_key=True)
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    description = db.Column(db.String, nullable=False)
+    description = db.Column(db.String)
 
     def to_dict(self):
         """Metodo per serializzare l'oggetto MenuItem in un dizionario."""
@@ -237,7 +237,7 @@ def insert_menu_item(userId):
     quantity = data.get('quantity')
     description = data.get('description')
 
-    if not all([name, price is not None, quantity is not None, description]):
+    if not all([name, price is not None, quantity is not None]):
         return jsonify({"error": "Dati dell'elemento menu incompleti"}), 400
 
     # Verifica se l'utente esiste

@@ -9,66 +9,66 @@
 
     <com.example.arrangement_manager.table_arrangement.TableArrangementView
         android:id="@+id/tableArrangementView"
-        android:layout_width="412dp"
-        android:layout_height="595dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:background="@android:color/white"
+        app:layout_constraintBottom_toTopOf="@+id/layout_buttons_bottom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/addButton"
-        android:layout_width="wrap_content"
+    <!-- Un unico LinearLayout per tutti i bottoni, ancorato al fondo della pagina -->
+    <LinearLayout
+        android:id="@+id/layout_buttons_bottom"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginBottom="12dp"
-        android:visibility="gone"
-        android:text="Add Table"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/editButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="75dp"
-        android:layout_marginEnd="33dp"
-        android:text="Edit layout"
-        app:layout_constraintBottom_toTopOf="@+id/deleteButton"
-        app:layout_constraintEnd_toStartOf="@+id/addMenu"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tableArrangementView" />
-
-    <Button
-        android:id="@+id/addMenu"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="75dp"
-        android:text="Add Menu"
-        app:layout_constraintBottom_toTopOf="@+id/deleteButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tableArrangementView" />
+        app:layout_constraintStart_toStartOf="parent">
 
-    <Button
-        android:id="@+id/doneButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="12dp"
-        android:visibility="gone"
-        android:text="Done"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <Button
+            android:id="@+id/editButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Edit layout" />
 
-    <Button
-        android:id="@+id/deleteButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:visibility="gone"
-        android:text="Delete table"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/doneButton"
-        app:layout_constraintStart_toEndOf="@+id/addButton" />
+        <Button
+            android:id="@+id/addMenu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Add Menu" />
 
+        <Button
+            android:id="@+id/addButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Add Table"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/deleteButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Delete table"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/doneButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Done"
+            android:visibility="gone"/>
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
