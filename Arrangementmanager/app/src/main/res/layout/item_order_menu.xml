@@ -23,6 +23,8 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Nome Elemento" />
 
+        <!-- Il TextView della descrizione è ora posizionato tra il nome e il pulsante di rimozione -->
+
         <TextView
             android:id="@+id/textView_item_price"
             android:layout_width="wrap_content"
@@ -74,5 +76,4 @@
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </androidx.cardview.widget.CardView>

@@ -14,6 +14,7 @@ import com.example.arrangement_manager.R
 import com.example.arrangement_manager.databinding.DialogOrderMenuBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.DecimalFormat
 
 class MenuOrderDialogFragment : DialogFragment() {
     private val args: MenuOrderDialogFragmentArgs by navArgs()
@@ -99,6 +100,7 @@ class MenuOrderDialogFragment : DialogFragment() {
             }
         }
 
+        // Osserva lo stato di caricamento
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collectLatest { isLoading ->
                 // Aggiorna lo stato del pulsante in base a isConfirmButtonEnabled e isLoading
@@ -115,11 +117,20 @@ class MenuOrderDialogFragment : DialogFragment() {
             }
         }
 
+        // Osserva se l'ordine è stato confermato
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.orderConfirmed.collectLatest { confirmed ->
                 if (confirmed) {
                     dismiss()
                 }
+            }
+        }
+
+        // Osserva il prezzo totale
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.totalPrice.collectLatest { newTotalPrice ->
+                val priceFormat = DecimalFormat("0.00")
+                binding.textViewTotalPrice.text = "Total: ${priceFormat.format(newTotalPrice)}€"
             }
         }
     }

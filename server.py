@@ -230,7 +230,7 @@ def get_all_menu_by_user(userId):
 
 @app.route('/users/<string:userId>/menu', methods=['POST'])
 def insert_menu_item(userId):
-    """Endpoint per inserire un elemento nel menu (= insertMenu)."""
+    """Endpoint per inserire un elemento nel menu. Se esiste, lo sostituisce."""
     data = request.json
     name = data.get('name')
     price = data.get('price')
@@ -244,20 +244,28 @@ def insert_menu_item(userId):
     if not User.query.get(userId):
         return jsonify({"error": "Utente non trovato"}), 404
 
-    # Controlla se l'elemento del menu esiste già
-    if MenuItem.query.get((name, userId)):
-        return jsonify({"error": "L'elemento del menu esiste già per questo utente"}), 409
+    # Cerca se l'elemento del menu esiste già
+    existing_item = MenuItem.query.get((name, userId))
 
-    new_item = MenuItem(
-        name=name,
-        id_user=userId,
-        price=price,
-        quantity=quantity,
-        description=description
-    )
-    db.session.add(new_item)
-    db.session.commit()
-    return jsonify(new_item.to_dict()), 201
+    if existing_item:
+        # Se l'elemento esiste, lo aggiorna con i nuovi dati
+        existing_item.price = price
+        existing_item.quantity = quantity
+        existing_item.description = description
+        db.session.commit()
+        return jsonify(existing_item.to_dict()), 200 # OK per aggiornamento
+    else:
+        # Se non esiste, crea un nuovo elemento
+        new_item = MenuItem(
+            name=name,
+            id_user=userId,
+            price=price,
+            quantity=quantity,
+            description=description
+        )
+        db.session.add(new_item)
+        db.session.commit()
+        return jsonify(new_item.to_dict()), 201
 
 @app.route('/users/<string:userId>/menu/<string:name>', methods=['PUT'])
 def update_menu_item(userId, name):

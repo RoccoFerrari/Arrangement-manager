@@ -10,6 +10,7 @@ import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
@@ -35,10 +36,17 @@ class MenuOrderViewModel (
     private val _orderConfirmed = MutableStateFlow(false)
     val orderConfirmed: StateFlow<Boolean> = _orderConfirmed.asStateFlow()
 
+    private val _totalPrice = MutableStateFlow(0.0)
+    val totalPrice: StateFlow<Double> = _totalPrice.asStateFlow()
+
     // Chiamata quando il ViewModel viene creato
     init {
-        Log.d("MenuOrderViewModel", "ViewModel inizializzato. Caricamento del menu...")
         loadMenuItems()
+        viewModelScope.launch {
+            orderedItems.collectLatest { quantities ->
+                calculateTotalPrice(quantities)
+            }
+        }
     }
 
     private fun loadMenuItems() {
@@ -152,5 +160,13 @@ class MenuOrderViewModel (
                 _isLoading.value = false
             }
         }
+    }
+
+    private fun calculateTotalPrice(quantities: Map<MenuItem, Int>) {
+        var total = 0.0
+        quantities.forEach { (menuItem, quantity) ->
+            total += menuItem.price * quantity
+        }
+        _totalPrice.value = total
     }
 }
