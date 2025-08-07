@@ -70,9 +70,9 @@
             app:argType="string" />
 
     </dialog>
-    <activity
+    <fragment
         android:id="@+id/kitchenActivity"
-        android:name="com.example.arrangement_manager.kitchen.KitchenActivity"
+        android:name="com.example.arrangement_manager.kitchen.KitchenFragment"
         android:label="activity_kitchen"
-        tools:layout="@layout/activity_order_kitchen" />
+        tools:layout="@layout/fragment_order_kitchen" />
 </navigation>

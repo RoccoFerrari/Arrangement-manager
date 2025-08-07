@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
@@ -23,7 +24,10 @@ class MenuOrderDialogFragment : DialogFragment() {
     private val binding get() = _binding!!
 
     private lateinit var menuAdapter: MenuOrderAdapter
-    private lateinit var viewModel: MenuOrderViewModel
+
+    private val viewModel: MenuOrderViewModel by viewModels {
+        MenuOrderViewModelFactory(requireActivity().application, args.userEmail)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,9 +52,6 @@ class MenuOrderDialogFragment : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val factory = MenuOrderViewModelFactory(args.userEmail)
-        viewModel = ViewModelProvider(this, factory)[MenuOrderViewModel::class.java]
 
         binding.textViewTableNumber.text = (args.table.name)
 

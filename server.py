@@ -346,4 +346,5 @@ if __name__ == '__main__':
         db.create_all()
     
     # Esegue l'app in modalità debug. In produzione, usa un server WSGI.
-    app.run(debug=True)
+    # host='0.0.0.0' accetta connessioni da qualsiasi dispositivo sulla rete
+    app.run(host='0.0.0.0', debug=True, port=5000)

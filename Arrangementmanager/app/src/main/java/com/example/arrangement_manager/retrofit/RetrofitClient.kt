@@ -11,7 +11,9 @@ object RetrofitClient {
 
     // IP del server Flask
     // Non si usa 127.0.0.1 perché questo indirizzo si riferisce alll'emulatore stesso
-    private const val BASE_URL = "http://10.0.2.2:5000/"
+    // si deve usare http://10.0.2.2:5000/
+    // private const val BASE_URL = "http://10.0.2.2:5000/"
+    private const val BASE_URL = "http://192.168.1.17:5000/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())

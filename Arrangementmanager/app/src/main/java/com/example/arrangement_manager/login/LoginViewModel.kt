@@ -80,8 +80,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 // Errore di rete (es. disconnessione)
                 _userSessionState.value = _userSessionState.value.copy(
                     isLoading = false,
-                    errorMessage = "Errore di connessione. Controlla la tua rete."
-                )
+                    errorMessage = "${e.message}") // Errore di connessione. Errore:
             } catch (e: Exception) {
                 // Errore generico inaspettato
                 _userSessionState.value = _userSessionState.value.copy(
