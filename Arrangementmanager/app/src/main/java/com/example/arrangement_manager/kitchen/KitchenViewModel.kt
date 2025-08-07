@@ -154,19 +154,29 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         _kitchenOrders.value = currentList.sortedBy { it.tableId } // Ordina per numero di tavolo
     }
 
-    fun removeDishFromOrder(orderId: String, dishItem: DishItem) {
+    fun removeDishFromOrder(orderId: String, displayDishItem: DisplayDishItem) {
         val currentList = _kitchenOrders.value.orEmpty().toMutableList()
         val orderToUpdate = currentList.find { it.orderId == orderId }
 
         if (orderToUpdate != null) {
             val updatedDishes = orderToUpdate.dishes.toMutableList()
-            updatedDishes.remove(dishItem)
+            // Trova il piatto da aggiornare in base al nome
+            val dishToRemove = updatedDishes.find { it.dishName == displayDishItem.dishItem.dishName }
+
+            if (dishToRemove != null) {
+                // Decrementa la quantità
+                if (dishToRemove.quantity > 1) {
+                    val index = updatedDishes.indexOf(dishToRemove)
+                    updatedDishes[index] = dishToRemove.copy(quantity = dishToRemove.quantity - 1)
+                } else {
+                    // Se la quantità è 1, rimuovi il piatto dalla lista
+                    updatedDishes.remove(dishToRemove)
+                }
+            }
 
             if (updatedDishes.isEmpty()) {
-                // Se non ci sono più piatti, rimuovi l'intero ordine
                 currentList.remove(orderToUpdate)
             } else {
-                // Altrimenti, aggiorna l'ordine con la nuova lista di piatti
                 val updatedOrder = orderToUpdate.copy(dishes = updatedDishes)
                 val index = currentList.indexOf(orderToUpdate)
                 currentList[index] = updatedOrder

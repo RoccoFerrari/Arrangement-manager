@@ -56,7 +56,7 @@ class KitchenFragment : Fragment() {
         // Passa il contesto corretto all'adattatore
         adapter = KitchenOrderAdapter(
             onDishReady = { orderId, dishItem ->
-                Toast.makeText(requireContext(), "Piatto '${dishItem.dishName}' dell'ordine $orderId pronto!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Piatto '${dishItem.dishItem.dishName}' dell'ordine $orderId pronto!", Toast.LENGTH_SHORT).show()
                 viewModel.removeDishFromOrder(orderId, dishItem)
                 // TODO: Implementa qui la logica per notificare il cameriere
             },
