@@ -140,6 +140,11 @@ class MenuOrderViewModel (
                         if (kitchenIp != null) {
                             try {
                                 Log.d("MenuOrderViewModel", "Tentativo di connessione all'IP: $kitchenIp sulla porta $kitchenPort")
+                                // Socket
+                                val socket = Socket(kitchenIp, kitchenPort)
+                                // writer
+                                val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+
                                 // Invio del'ordine alla cucina tramite Wi-Fi
                                 val dishesToSend = _orderedItems.value.map { (menuItem, quantity) ->
                                     DishItem(dishName = menuItem.name, price = menuItem.price, quantity = quantity)
@@ -150,10 +155,13 @@ class MenuOrderViewModel (
                                 val orderToSend = Order(orderId = orderId, tableId = tableId, dishes = dishesToSend)
                                 val jsonString = orderAdapter.toJson(orderToSend)
 
-                                Socket(kitchenIp, kitchenPort).use { socket ->
-                                    val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                                    writer.println(jsonString)
-                                }
+                                // Invio della stringa JSON seguita da un carattere \n per via del readLine
+                                writer.println(jsonString)
+
+                                // Chiusura del writer e del socket dopo l'invio
+                                writer.close()
+                                socket.close()
+
                                 Log.d("MenuOrderViewModel", "Ordine inviato con successo anche alla cucina.")
                                 wifiSendSuccess = true
 
