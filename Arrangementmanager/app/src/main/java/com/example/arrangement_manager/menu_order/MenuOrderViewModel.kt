@@ -14,7 +14,7 @@ import com.example.arrangement_manager.retrofit.MenuItem
 import com.example.arrangement_manager.retrofit.MenuItemUpdate
 import com.example.arrangement_manager.retrofit.NewOrderEntry
 import com.example.arrangement_manager.retrofit.RetrofitClient
-import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
+import kotlinx.coroutines.Dispatchers
 import com.example.arrangement_manager.retrofit.Table
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -31,6 +31,7 @@ import java.net.Socket
 import java.util.UUID
 import android.content.Context
 import android.net.nsd.NsdServiceInfo
+import java.net.InetSocketAddress
 
 class MenuOrderViewModel (
     application: Application,
@@ -115,7 +116,7 @@ class MenuOrderViewModel (
     }
 
     fun sendOrder(table: Table) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) { // Sposta l'operazione su un thread I/O
             _isLoading.value = true
             _errorMessage.value = null
 
@@ -138,14 +139,20 @@ class MenuOrderViewModel (
                         val kitchenIp = kitchenIpAddress.value
 
                         if (kitchenIp != null) {
+                            var socket: Socket? = null
+                            var writer: PrintWriter? = null
                             try {
                                 Log.d("MenuOrderViewModel", "Tentativo di connessione all'IP: $kitchenIp sulla porta $kitchenPort")
-                                // Socket
-                                val socket = Socket(kitchenIp, kitchenPort)
-                                // writer
-                                val writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
 
-                                // Invio del'ordine alla cucina tramite Wi-Fi
+                                // Utilizza un socket con timeout per una gestione più robusta
+                                socket = Socket()
+                                socket.connect(InetSocketAddress(kitchenIp, kitchenPort), 5000) // Timeout di 5 secondi
+                                Log.d("MenuOrderViewModel", "Socket creato e connesso")
+
+                                writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
+                                Log.d("MenuOrderViewModel", "Writer creato")
+
+                                // Invio dell'ordine alla cucina tramite Wi-Fi
                                 val dishesToSend = _orderedItems.value.map { (menuItem, quantity) ->
                                     DishItem(dishName = menuItem.name, price = menuItem.price, quantity = quantity)
                                 }.filter { it.quantity > 0 }
@@ -155,30 +162,36 @@ class MenuOrderViewModel (
                                 val orderToSend = Order(orderId = orderId, tableId = tableId, dishes = dishesToSend)
                                 val jsonString = orderAdapter.toJson(orderToSend)
 
-                                // Invio della stringa JSON seguita da un carattere \n per via del readLine
-                                writer.println(jsonString)
+                                Log.d("MenuOrderViewModel", "Invio di dati JSON: $jsonString")
 
-                                // Chiusura del writer e del socket dopo l'invio
-                                writer.close()
-                                socket.close()
+                                writer.println(jsonString)
+                                // Con `autoFlush` a `true` (impostato nel costruttore di PrintWriter),
+                                // il flush è automatico dopo `println`.
+                                // L'aggiunta di `writer.flush()` esplicito non è strettamente necessaria ma può essere utile in alcuni casi.
 
                                 Log.d("MenuOrderViewModel", "Ordine inviato con successo anche alla cucina.")
                                 wifiSendSuccess = true
 
                             } catch (e: Exception) {
-                                Log.e("MenuOrderViewModel", "Errore nell'invio Wi-Fi: ${e.message}")
+                                Log.e("MenuOrderViewModel", "Errore nell'invio Wi-Fi: ${e.message}", e)
                                 _errorMessage.value = "Ordine salvato nel database, ma errore nell'invio alla cucina: ${e.message}"
+                            } finally {
+                                // Assicurati che le risorse vengano sempre chiuse
+                                writer?.close()
+                                socket?.close()
+                                Log.d("MenuOrderViewModel", "Socket e Writer chiusi.")
                             }
+
                         } else {
                             Log.e("MenuOrderViewModel", "Indirizzo IP della cucina non disponibile.")
                             _errorMessage.value = "Ordine salvato nel database, ma impossibile trovare il server della cucina."
                         }
 
+                        // Continua con il resto della logica dopo l'invio
                         updateMenuItemQuantities()
                         _orderConfirmed.value = true
 
                     } else {
-                        // Gestisci l'errore di invio al database
                         val errorBody = response.errorBody()?.string()
                         Log.e("MenuOrderViewModel", "Errore invio ordine al database: ${response.code()} - $errorBody")
                         _errorMessage.value = "Errore nell'invio dell'ordine: ${response.code()}"
