@@ -43,10 +43,13 @@ class MenuOrderDialogFragment : DialogFragment() {
         dialog?.window?.let { window ->
             val metrics = resources.displayMetrics
             val width = metrics.widthPixels
+            val height = metrics.heightPixels
 
+            val newHeight = (height * 0.50).toInt()
             val newWidth = (width * 0.85).toInt()
 
             window.setLayout(newWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
+            binding.recyclerViewMenuItems.layoutParams.height = newHeight
         }
     }
 
