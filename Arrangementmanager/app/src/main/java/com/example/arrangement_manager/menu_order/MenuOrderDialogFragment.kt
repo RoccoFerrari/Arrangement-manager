@@ -8,9 +8,11 @@ import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.arrangement_manager.databinding.DialogOrderMenuBinding
+import com.example.arrangement_manager.retrofit.MenuItem
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -70,12 +72,25 @@ class MenuOrderDialogFragment : DialogFragment() {
             orderedQuantities = emptyMap(),
             onQuantityChanged = { menuItem, quantity ->
                 viewModel.onQuantityChanged(menuItem, quantity)
+            },
+            // Passa la lambda per gestire il click sul nome del piatto
+            onDishNameClicked = { menuItem ->
+                openDishDescriptionDialog(menuItem)
             }
         )
         binding.recyclerViewMenuItems.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = menuAdapter
         }
+    }
+
+    private fun openDishDescriptionDialog(menuItem: MenuItem) {
+        val action = MenuOrderDialogFragmentDirections
+            .actionMenuOrderDialogFragmentToDishDescriptionDialogFragment(
+                dishName = menuItem.name,
+                dishDescription = menuItem.description
+            )
+        findNavController().navigate(action)
     }
 
     private fun observeViewModel() {

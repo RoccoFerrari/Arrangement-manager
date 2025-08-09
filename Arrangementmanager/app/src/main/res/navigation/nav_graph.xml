@@ -68,6 +68,9 @@
         <argument
             android:name="userEmail"
             app:argType="string" />
+        <action
+            android:id="@+id/action_menuOrderDialogFragment_to_dishDescriptionDialogFragment"
+            app:destination="@id/dishDescriptionDialogFragment" />
 
     </dialog>
     <fragment
@@ -75,4 +78,16 @@
         android:name="com.example.arrangement_manager.kitchen.KitchenFragment"
         android:label="activity_kitchen"
         tools:layout="@layout/fragment_order_kitchen" />
+
+    <dialog
+        android:id="@+id/dishDescriptionDialogFragment"
+        android:name="com.example.arrangement_manager.menu_order.DishDescriptionDialogFragment"
+        tools:layout="@layout/dialog_dish_description">
+        <argument
+            android:name="dishName"
+            app:argType="string" />
+        <argument
+            android:name="dishDescription"
+            app:argType="string" />
+    </dialog>
 </navigation>

@@ -12,7 +12,8 @@ import com.example.arrangement_manager.retrofit.MenuItem
 class MenuOrderAdapter(
     private var menuItems: List<MenuItem>,
     private var orderedQuantities: Map<MenuItem, Int>,
-    private val onQuantityChanged: (MenuItem, Int) -> Unit
+    private val onQuantityChanged: (MenuItem, Int) -> Unit,
+    private val onDishNameClicked: (MenuItem) -> Unit
 ) : RecyclerView.Adapter<MenuOrderAdapter.MenuOrderViewHolder>() {
 
     class MenuOrderViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -58,6 +59,10 @@ class MenuOrderAdapter(
             if (orderedQuantity > 0) {
                 onQuantityChanged(menuItem, orderedQuantity - 1)
             }
+        }
+
+        holder.nameTextView.setOnClickListener {
+            onDishNameClicked(menuItem)
         }
     }
 }
