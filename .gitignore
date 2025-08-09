@@ -7,3 +7,4 @@
 **/.idea/
 *.asv
 **/.obsidian/
+__pycache__/
