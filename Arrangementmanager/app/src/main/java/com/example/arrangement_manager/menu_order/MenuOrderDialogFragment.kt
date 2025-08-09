@@ -7,11 +7,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.arrangement_manager.R
 import com.example.arrangement_manager.databinding.DialogOrderMenuBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch

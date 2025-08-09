@@ -17,7 +17,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
+import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.Socket
 import java.net.SocketException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -40,6 +44,9 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     private val serviceName = "KitchenService"
     private val serviceType = "_http._tcp."
     private val serverPort = 6000
+
+    // Mappatura degli ip che inviano ordini: tableName -> ip
+    private val clientMap = mutableMapOf<String, String>()
 
     init {
         _kitchenOrders.value = emptyList()
@@ -73,12 +80,12 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
             serverJob = viewModelScope.launch(Dispatchers.IO) {
                 try {
                     serverSocket = ServerSocket(serverPort)
-                    Log.d("KitchenViewModel", "Server in ascolto sulla porta $serverPort...")
+                    Log.d("DEBUG_KITCHEN", "Server in ascolto sulla porta $serverPort...")
                     while (isServerRunning.get()) {
                         val clientSocket = serverSocket?.accept()
 
                         if (clientSocket != null) {
-                            Log.d("KitchenViewModel", "Connessione ricevuta da ${clientSocket.inetAddress.hostAddress}")
+                            Log.d("DEBUG_KITCHEN", "Connessione ricevuta da ${clientSocket.inetAddress.hostAddress}")
                             launch {
                                 handleClient(clientSocket)
                             }
@@ -86,9 +93,9 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
                     }
                 } catch (e: SocketException) {
                     // Si verifica quando il server viene interrotto (fine di vita del viewmodel)
-                    Log.d("KitchenViewModel", "Server interrotto: ${e.message}")
+                    Log.d("DEBUG_KITCHEN", "Server interrotto: ${e.message}")
                 } catch (e: Exception) {
-                    Log.e("KitchenViewModel", "Errore durante il server: ${e.message}")
+                    Log.e("DEBUG_KITCHEN", "Errore durante il server: ${e.message}")
                 } finally {
                     isServerRunning.set(false)
                     serverSocket?.close()
@@ -105,18 +112,21 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
                 val jsonString = reader.readLine() // lettura di una sola riga
 
                 if(jsonString != null) {
-                    Log.d("KitchenViewModel", "Dati Json ricevuti: $jsonString")
+                    Log.d("DEBUG_KITCHEN", "Dati Json ricevuti: $jsonString")
                     try {
                         val order = gson.fromJson(jsonString, Order::class.java)
+                        val clientIp = socket.inetAddress.hostAddress
+                        Log.d("DEBUG_KITCHEN", "Ordine ricevuto per tavolo ${order.tableId}, IP: $clientIp")
+                        clientMap[order.tableId] = clientIp!!
                         // Passaggio dell'ordine all'UI tramite viewmodel
                         withContext(Dispatchers.Main) {
                             addOrder(order)
                         }
                     } catch (e: Exception) {
-                        Log.e("KitchenViewModel", "Errore nella conversione del Json: ${e.message}")
+                        Log.e("DEBUG_KITCHEN", "Errore nella conversione del Json: ${e.message}")
                     }
                 } else {
-                    Log.d("KitchenViewModel", "Nessun ordine ricevuto")
+                    Log.d("DEBUG_KITCHEN", "Nessun ordine ricevuto")
                 }
             }
         }
@@ -130,7 +140,7 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun stopListeningForOrders() {
-        Log.d("KitchenViewModel", "Tentativo di chiusura del server")
+        Log.d("DEBUG_KITCHEN", "Tentativo di chiusura del server")
         isServerRunning.set(false)
         serverJob?.cancel()
     }
@@ -188,7 +198,42 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     fun removeOrder(orderId: String) {
         val currentList = _kitchenOrders.value.orEmpty().toMutableList()
         val orderToRemove = currentList.find { it.orderId == orderId }
-        currentList.remove(orderToRemove)
-        _kitchenOrders.value = currentList
+        if(orderToRemove != null) {
+            val tableId = orderToRemove.tableId
+            currentList.remove(orderToRemove)
+            _kitchenOrders.value = currentList
+
+            Log.d("DEBUG_KITCHEN", "Tentativo di invio notifica per tavolo $tableId.")
+            sendNotificationToClient(tableId, "L'ordine del tavolo $tableId completato")
+        }
+    }
+
+    private fun sendNotificationToClient(tableId: String, message: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val clientIp = clientMap[tableId]
+            if (clientIp != null) {
+                val timeout = 5000 // 5 seconds
+
+                try {
+                    Log.d("DEBUG_KITCHEN", "Tentativo di connessione a $clientIp sulla porta 6001 per notifica con timeout di $timeout ms.")
+
+                    val socket = Socket()
+                    socket.connect(InetSocketAddress(clientIp, 6001), timeout)
+
+                    PrintWriter(OutputStreamWriter(socket.getOutputStream()), true).use { writer ->
+                        Log.d("DEBUG_KITCHEN", "Socket connesso, invio messaggio: $message")
+                        writer.println(message)
+                    }
+                    socket.close()
+                    clientMap.remove(tableId)
+                    Log.d("DEBUG_KITCHEN", "Notifica inviata con successo a $clientIp.")
+                } catch (e: Exception) {
+                    // In caso di timeout, verrà lanciata una SocketTimeoutException
+                    Log.e("DEBUG_KITCHEN", "Errore nell'invio notifica a $clientIp: ${e.message}")
+                }
+            } else {
+                Log.e("DEBUG_KITCHEN", "Nessun IP trovato per il tavolo $tableId.")
+            }
+        }
     }
 }

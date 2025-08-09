@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.arrangement_manager.kitchen.DishItem
 import com.example.arrangement_manager.kitchen.Order
@@ -135,22 +134,21 @@ class MenuOrderViewModel (
                     if (response.isSuccessful) {
                         Log.d("MenuOrderViewModel", "Ordine inviato con successo al database. Procedo con l'invio alla cucina.")
 
-                        var wifiSendSuccess = false
                         val kitchenIp = kitchenIpAddress.value
 
                         if (kitchenIp != null) {
                             var socket: Socket? = null
                             var writer: PrintWriter? = null
                             try {
-                                Log.d("MenuOrderViewModel", "Tentativo di connessione all'IP: $kitchenIp sulla porta $kitchenPort")
+                                Log.d("DEBUG_MENU_ORDER", "Tentativo di connessione all'IP: $kitchenIp sulla porta $kitchenPort")
 
                                 // Utilizza un socket con timeout per una gestione più robusta
                                 socket = Socket()
                                 socket.connect(InetSocketAddress(kitchenIp, kitchenPort), 5000) // Timeout di 5 secondi
-                                Log.d("MenuOrderViewModel", "Socket creato e connesso")
+                                Log.d("DEBUG_MENU_ORDER", "Socket creato e connesso")
 
                                 writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                                Log.d("MenuOrderViewModel", "Writer creato")
+                                Log.d("DEBUG_MENU_ORDER", "Writer creato")
 
                                 // Invio dell'ordine alla cucina tramite Wi-Fi
                                 val dishesToSend = _orderedItems.value.map { (menuItem, quantity) ->
@@ -162,28 +160,27 @@ class MenuOrderViewModel (
                                 val orderToSend = Order(orderId = orderId, tableId = tableId, dishes = dishesToSend)
                                 val jsonString = orderAdapter.toJson(orderToSend)
 
-                                Log.d("MenuOrderViewModel", "Invio di dati JSON: $jsonString")
+                                Log.d("DEBUG_MENU_ORDER", "Invio di dati JSON: $jsonString")
 
                                 writer.println(jsonString)
                                 // Con `autoFlush` a `true` (impostato nel costruttore di PrintWriter),
                                 // il flush è automatico dopo `println`.
                                 // L'aggiunta di `writer.flush()` esplicito non è strettamente necessaria ma può essere utile in alcuni casi.
 
-                                Log.d("MenuOrderViewModel", "Ordine inviato con successo anche alla cucina.")
-                                wifiSendSuccess = true
+                                Log.d("DEBUG_MENU_ORDER", "Ordine inviato con successo anche alla cucina.")
 
                             } catch (e: Exception) {
-                                Log.e("MenuOrderViewModel", "Errore nell'invio Wi-Fi: ${e.message}", e)
+                                Log.e("DEBUG_MENU_ORDER", "Errore nell'invio Wi-Fi: ${e.message}", e)
                                 _errorMessage.value = "Ordine salvato nel database, ma errore nell'invio alla cucina: ${e.message}"
                             } finally {
                                 // Assicurati che le risorse vengano sempre chiuse
                                 writer?.close()
                                 socket?.close()
-                                Log.d("MenuOrderViewModel", "Socket e Writer chiusi.")
+                                Log.d("DEBUG_MENU_ORDER", "Socket e Writer chiusi.")
                             }
 
                         } else {
-                            Log.e("MenuOrderViewModel", "Indirizzo IP della cucina non disponibile.")
+                            Log.e("DEBUG_MENU_ORDER", "Indirizzo IP della cucina non disponibile.")
                             _errorMessage.value = "Ordine salvato nel database, ma impossibile trovare il server della cucina."
                         }
 
@@ -193,7 +190,7 @@ class MenuOrderViewModel (
 
                     } else {
                         val errorBody = response.errorBody()?.string()
-                        Log.e("MenuOrderViewModel", "Errore invio ordine al database: ${response.code()} - $errorBody")
+                        Log.e("DEBUG_MENU_ORDER", "Errore invio ordine al database: ${response.code()} - $errorBody")
                         _errorMessage.value = "Errore nell'invio dell'ordine: ${response.code()}"
                     }
                 } catch (e: IOException) {
@@ -215,29 +212,29 @@ class MenuOrderViewModel (
             _errorMessage.value = null
 
             val updates = _orderedItems.value.map { (menuItem, quantity) ->
-                Log.d("MenuOrderViewModel", "Order received for ${menuItem.name}: ordered=${quantity}, available=${menuItem.quantity}")
+                Log.d("DEBUG_MENU_ORDER", "Order received for ${menuItem.name}: ordered=${quantity}, available=${menuItem.quantity}")
                 val updatedItem = MenuItemUpdate(
                     price = menuItem.price,
                     quantity = menuItem.quantity - quantity,
                     description = menuItem.description
                 )
-                Log.d("MenuOrderViewModel", "Updating item: ${menuItem.name}, with new quantity: ${updatedItem.quantity}")
+                Log.d("DEBUG_MENU_ORDER", "Updating item: ${menuItem.name}, with new quantity: ${updatedItem.quantity}")
                 menuItem.name to updatedItem
             }
 
             try {
                 for ((menuItemName, menuItemUpdate) in updates) {
-                    Log.d("MenuOrderViewModel", "Attempting to update ${menuItemName} to quantity: ${menuItemUpdate.quantity}")
+                    Log.d("DEBUG_MENU_ORDER", "Attempting to update ${menuItemName} to quantity: ${menuItemUpdate.quantity}")
                     val response = apiService.updateMenuItem(userId, menuItemName, menuItemUpdate)
                     if (!response.isSuccessful) {
                         val errorBody = response.errorBody()?.string()
-                        Log.e("MenuOrderViewModel", "Update failed for $menuItemName: ${response.code()} - Error: $errorBody")
+                        Log.e("DEBUG_MENU_ORDER", "Update failed for $menuItemName: ${response.code()} - Error: $errorBody")
                         _errorMessage.value = "Errore nell'aggiornamento dell'articolo $menuItemName: ${response.code()}"
                         _isLoading.value = false
                         _orderConfirmed.value = false
                         return@launch
                     } else {
-                        Log.d("MenuOrderViewModel", "Update successful for $menuItemName.")
+                        Log.d("DEBUG_MENU_ORDER", "Update successful for $menuItemName.")
                     }
                 }
 
