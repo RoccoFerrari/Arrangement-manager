@@ -37,16 +37,8 @@ class TableArrangementViewModel(
     private val _uiState = MutableStateFlow(TableUiState())
     val uiState: StateFlow<TableUiState> = _uiState.asStateFlow()
 
-    // Porta per le notifiche
-    private var notificationJob: Job? = null
-    private val notificationPort = 6001
-    // Comunicazione al fragment di richiesta permesso
-    private val _orderReadyEvent = MutableLiveData<String>()
-    val orderReadyEvent: LiveData<String> = _orderReadyEvent
-
     // Eseguita quando il ViewModel viene creato
     init {
-        startNotificationListener()
         loadTables()
     }
 
@@ -167,41 +159,5 @@ class TableArrangementViewModel(
                 )
             }
         }
-    }
-
-    private fun startNotificationListener() {
-        notificationJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val notificationServerSocket = ServerSocket(notificationPort)
-                Log.d("DEBUG_WAITER", "Server delle notifiche avviato e in ascolto sulla porta $notificationPort.")
-                while (isActive) {
-                    val clientSocket = notificationServerSocket.accept()
-                    if (clientSocket != null) {
-                        val clientIp = clientSocket.inetAddress.hostAddress
-                        Log.d("DEBUG_WAITER", "Connessione notifica ricevuta da: $clientIp.")
-                        launch {
-                            val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
-                            val message = reader.readLine()
-                            Log.d("MenuOrderViewModel", "Notifica ricevuta: $message")
-
-                            // Passa il messaggio al Fragment tramite LiveData
-                            withContext(Dispatchers.Main) {
-                                _orderReadyEvent.value = message
-                            }
-                            clientSocket.close()
-                        }
-                    }
-                }
-            } catch (e: SocketException) {
-                Log.d("Client", "Listener di notifica chiuso.")
-            } catch (e: Exception) {
-                Log.e("Client", "Errore nel listener di notifica: ${e.message}")
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        notificationJob?.cancel()
     }
 }

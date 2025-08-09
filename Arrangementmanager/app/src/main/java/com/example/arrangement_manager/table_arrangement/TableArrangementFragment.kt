@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.fragment.navArgs
 import com.example.arrangement_manager.R
+import com.example.arrangement_manager.notification.NotificationService
 import com.example.arrangement_manager.retrofit.Table
 
 class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClickedListener {
@@ -48,18 +50,6 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
         )
     }
 
-    // Launcher per richiedere il permesso di notifica
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                tableViewModel.orderReadyEvent.value?.let { message ->
-                    showOrderReadyNotification(message)
-                }
-            } else {
-                Toast.makeText(requireContext(), "Permesso negato. Impossibile mostrare la notifica.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -70,7 +60,12 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        observeViewModel()
+        val serviceIntent = Intent(requireContext(), NotificationService::class.java)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ContextCompat.startForegroundService(requireContext(), serviceIntent)
+        } else {
+            requireContext().startService(serviceIntent)
+        }
 
         // Ottieni i riferimenti agli elementi UI
         tableArrangementView = view.findViewById(R.id.tableArrangementView)
@@ -125,14 +120,6 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
         }
     }
 
-    private fun observeViewModel() {
-        // Osserva il messaggio di notifica di ordine pronto
-        tableViewModel.orderReadyEvent.observe(viewLifecycleOwner) { message ->
-            Log.d("DEBUG_MENU_ORDER", "orderReadyEvent ricevuto. Messaggio: $message")
-            handleOrderReadyNotification(message)
-        }
-    }
-
     private fun setEditMode(enable: Boolean) {
         isEditMode = enable
         tableArrangementView.setEditMode(enable)
@@ -163,65 +150,5 @@ class TableArrangementFragment : Fragment(), OnTableUpdatedListener, OnTableClic
     override fun onTableClicked(table: Table) {
         val action = TableArrangementFragmentDirections.actionTableArrangementFragmentToMenuOrderDialogFragment(table, args.userEmail)
         findNavController().navigate(action)
-    }
-
-    private fun handleOrderReadyNotification(message: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Log.d("DEBUG_MENU_ORDER", "handleOrderReadyNotification chiamata. Versione Android: ${Build.VERSION.SDK_INT}")
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-                Log.d("DEBUG_MENU_ORDER", "Permesso notifica concesso. Chiamo showOrderReadyNotification.")
-                showOrderReadyNotification(message)
-            } else {
-                Log.d("DEBUG_MENU_ORDER", "Versione Android pre-TIRAMISU, chiamo showOrderReadyNotification.")
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        } else {
-            showOrderReadyNotification(message)
-        }
-    }
-
-    private fun showOrderReadyNotification(message: String) {
-        val context = requireContext()
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-
-        val notificationManager = NotificationManagerCompat.from(context)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("order_channel", "Notifiche Ordini", NotificationManager.IMPORTANCE_DEFAULT)
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val builder = NotificationCompat.Builder(context, "order_channel")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Ordine Pronto!")
-            .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-
-        notificationManager.notify(123, builder.build())
-        vibrateDevice(context)
-    }
-
-    private fun vibrateDevice(context: Context) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        }
-
-        vibrator?.let {
-            if (it.hasVibrator()) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    it.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    it.vibrate(500)
-                }
-            }
-        }
     }
 }
