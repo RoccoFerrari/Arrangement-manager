@@ -53,11 +53,11 @@ class KitchenFragment : Fragment() {
 
         adapter = KitchenOrderAdapter(
             onDishReady = { orderId, dishItem ->
-                Toast.makeText(requireContext(), "Piatto '${dishItem.dishItem.dishName}' dell'ordine $orderId pronto!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Dish '${dishItem.dishItem.dishName}' ready!", Toast.LENGTH_SHORT).show()
                 viewModel.removeDishFromOrder(orderId, dishItem)
             },
             onOrderReady = { orderId ->
-                Toast.makeText(requireContext(), "Ordine per tavolo $orderId completato!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Order $orderId completed!", Toast.LENGTH_SHORT).show()
                 viewModel.removeOrder(orderId)
             }
         )
