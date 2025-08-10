@@ -28,7 +28,9 @@ class KitchenFragment : Fragment() {
     private var _binding: FragmentOrderKitchenBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: KitchenViewModel by viewModels()
+    private val viewModel: KitchenViewModel by viewModels {
+        KitchenViewModelFactory(requireActivity().application)
+    }
     private lateinit var adapter: KitchenOrderAdapter
 
     override fun onCreateView(
