@@ -21,8 +21,10 @@
         android:id="@+id/layout_buttons_bottom"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
         android:gravity="center"
+        android:orientation="horizontal"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -32,7 +34,7 @@
             android:id="@+id/editButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
+            android:layout_marginRight="10dp"
             android:layout_weight="1"
             android:backgroundTint="#ff6750a4"
             android:text="Edit layout"
@@ -42,18 +44,18 @@
             android:id="@+id/addMenu"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
+            android:layout_marginLeft="10dp"
             android:layout_weight="1"
             android:backgroundTint="#ff6750a4"
-            android:textColor="@color/white"
-            android:text="Add Menu" />
+            android:text="Add Menu"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/addButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginEnd="4dp"
+            android:layout_weight="1"
             android:backgroundTint="#ff6750a4"
             android:text="Add Table"
             android:textColor="@color/white"
@@ -63,12 +65,12 @@
             android:id="@+id/deleteButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginEnd="4dp"
+            android:layout_weight="1"
             android:backgroundTint="#ff6750a4"
             android:text="Delete table"
             android:textColor="@color/white"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/doneButton"

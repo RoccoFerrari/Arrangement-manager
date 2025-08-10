@@ -85,10 +85,15 @@ class MenuOrderDialogFragment : DialogFragment() {
     }
 
     private fun openDishDescriptionDialog(menuItem: MenuItem) {
+        val dishDescription = if (menuItem.description.isEmpty()) {
+            "No description"
+        } else {
+            menuItem.description
+        }
         val action = MenuOrderDialogFragmentDirections
             .actionMenuOrderDialogFragmentToDishDescriptionDialogFragment(
                 dishName = menuItem.name,
-                dishDescription = menuItem.description
+                dishDescription = dishDescription
             )
         findNavController().navigate(action)
     }

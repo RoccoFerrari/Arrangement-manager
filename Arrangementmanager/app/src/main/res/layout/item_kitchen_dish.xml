@@ -16,7 +16,7 @@
         android:textColor="@android:color/black"
         android:textSize="18sp"
         android:textStyle="bold"
-        tools:text="Pizza Margherita" />
+        tools:text="Dish" />
 
     <TextView
         android:id="@+id/tv_dish_price"

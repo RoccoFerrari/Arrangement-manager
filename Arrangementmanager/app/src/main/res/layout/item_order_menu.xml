@@ -21,7 +21,7 @@
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Nome Elemento" />
+            tools:text="Element name" />
 
         <TextView
             android:id="@+id/textView_item_price"
@@ -41,7 +41,7 @@
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView_item_price"
-            tools:text="Disponibili: 50" />
+            tools:text="Aviable: 50" />
 
         <ImageButton
             android:id="@+id/button_remove"
