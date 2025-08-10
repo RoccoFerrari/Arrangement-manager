@@ -13,7 +13,7 @@ class DishDescriptionDialogFragment : DialogFragment() {
     private var _binding: DialogDishDescriptionBinding? = null
     private val binding get() = _binding!!
 
-    // Recupera gli argomenti passati al Fragment
+    // Retrieves the arguments passed to the Fragment
     private val args: DishDescriptionDialogFragmentArgs by navArgs()
 
     override fun onStart() {
@@ -25,7 +25,7 @@ class DishDescriptionDialogFragment : DialogFragment() {
 
             val newWidth = (width * 0.75).toInt()
 
-            // Imposta la larghezza all'85% dello schermo e l'altezza su WRAP_CONTENT
+            // Set the width to 85% of the screen and the height to WRAP_CONTENT
             window.setLayout(newWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
     }
@@ -41,11 +41,11 @@ class DishDescriptionDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Imposta il testo della descrizione
+        // Set the description text
         binding.textViewDialogTitle.text = args.dishName
         binding.textViewDialogDescription.text = args.dishDescription
 
-        // Chiudi il dialog al click del pulsante
+        // Closes the dialog when the button is clicked
         binding.buttonDialogClose.setOnClickListener {
             dismiss()
         }

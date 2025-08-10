@@ -5,7 +5,7 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import kotlinx.parcelize.Parcelize
 
-// Il server Flask restituisce un oggetto 'user'
+// Handpoints creation
 @JsonClass(generateAdapter = true)
 data class LoginResponse(
     val message: String,
@@ -29,7 +29,6 @@ data class Table(
     val height: Float
 ) : Parcelable
 
-// Classe per le richieste PUT (Flask accetta solo campi da aggiornare)
 @JsonClass(generateAdapter = true)
 data class TableUpdate(
     @Json(name = "x_coordinate") val xCoordinate: Float? = null,

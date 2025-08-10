@@ -61,7 +61,7 @@ class MenuOrderViewModel (
     private val orderAdapter = moshi.adapter(Order::class.java)
     private val apiService = RetrofitClient.apiService
 
-    // Variabili per ip cucina dinamico
+    // Kitchen dynamic ip variables
     private var nsdManager: NsdManager? = null
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private val serviceType = "_http._tcp."
@@ -70,7 +70,7 @@ class MenuOrderViewModel (
     private val _kitchenIpAddress = MutableLiveData<String?>(null)
     private val kitchenIpAddress: LiveData<String?> = _kitchenIpAddress
 
-    // Chiamata quando il ViewModel viene creato
+    // Called when ViewModel created
     init {
         loadMenuItems()
         viewModelScope.launch {
@@ -78,7 +78,6 @@ class MenuOrderViewModel (
                 calculateTotalPrice(quantities)
             }
         }
-        // Avvio della scoperta dell'ip
         startDiscovery()
     }
 
@@ -91,12 +90,12 @@ class MenuOrderViewModel (
                 if (response.isSuccessful) {
                     _menuItems.value = response.body() ?: emptyList()
                 } else {
-                    _errorMessage.value = "Errore nel recupero del menu: ${response.code()}"
+                    _errorMessage.value = "Error retrieving menu: ${response.code()}"
                 }
             } catch (e: IOException) {
-                _errorMessage.value = "Errore di connessione. Controlla la tua rete."
+                _errorMessage.value = "Connection error. Check your network."
             } catch (e: HttpException) {
-                _errorMessage.value = "Errore HTTP: ${e.code()}"
+                _errorMessage.value = "HTTP error: ${e.code()}"
             } finally {
                 _isLoading.value = false
             }
@@ -115,7 +114,7 @@ class MenuOrderViewModel (
     }
 
     fun sendOrder(table: Table) {
-        viewModelScope.launch(Dispatchers.IO) { // Sposta l'operazione su un thread I/O
+        viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             _errorMessage.value = null
 
@@ -132,7 +131,7 @@ class MenuOrderViewModel (
                     val response = apiService.insertOrderEntries(userId, newOrderEntries)
 
                     if (response.isSuccessful) {
-                        Log.d("MenuOrderViewModel", "Ordine inviato con successo al database. Procedo con l'invio alla cucina.")
+                        Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the database. Sending it to the kitchen.")
 
                         val kitchenIp = kitchenIpAddress.value
 
@@ -140,17 +139,17 @@ class MenuOrderViewModel (
                             var socket: Socket? = null
                             var writer: PrintWriter? = null
                             try {
-                                Log.d("DEBUG_MENU_ORDER", "Tentativo di connessione all'IP: $kitchenIp sulla porta $kitchenPort")
+                                Log.d("DEBUG_MENU_ORDER", "Attempting to connect to IP: $kitchenIp on the port $kitchenPort")
 
-                                // Utilizza un socket con timeout per una gestione più robusta
+                                // Use a socket with timeout for more robust handling (5 secs)
                                 socket = Socket()
-                                socket.connect(InetSocketAddress(kitchenIp, kitchenPort), 5000) // Timeout di 5 secondi
-                                Log.d("DEBUG_MENU_ORDER", "Socket creato e connesso")
+                                socket.connect(InetSocketAddress(kitchenIp, kitchenPort), 5000)
+                                Log.d("DEBUG_MENU_ORDER", "Socket created and connected")
 
                                 writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                                Log.d("DEBUG_MENU_ORDER", "Writer creato")
+                                Log.d("DEBUG_MENU_ORDER", "Writer created")
 
-                                // Invio dell'ordine alla cucina tramite Wi-Fi
+                                // Sending the order to the kitchen via Wi-Fi
                                 val dishesToSend = _orderedItems.value.map { (menuItem, quantity) ->
                                     DishItem(dishName = menuItem.name, price = menuItem.price, quantity = quantity)
                                 }.filter { it.quantity > 0 }
@@ -160,43 +159,38 @@ class MenuOrderViewModel (
                                 val orderToSend = Order(orderId = orderId, tableId = tableId, dishes = dishesToSend)
                                 val jsonString = orderAdapter.toJson(orderToSend)
 
-                                Log.d("DEBUG_MENU_ORDER", "Invio di dati JSON: $jsonString")
+                                Log.d("DEBUG_MENU_ORDER", "Sending JSON data: $jsonString")
 
                                 writer.println(jsonString)
-                                // Con `autoFlush` a `true` (impostato nel costruttore di PrintWriter),
-                                // il flush è automatico dopo `println`.
-                                // L'aggiunta di `writer.flush()` esplicito non è strettamente necessaria ma può essere utile in alcuni casi.
 
-                                Log.d("DEBUG_MENU_ORDER", "Ordine inviato con successo anche alla cucina.")
+                                Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the kitchen too.")
 
                             } catch (e: Exception) {
-                                Log.e("DEBUG_MENU_ORDER", "Errore nell'invio Wi-Fi: ${e.message}", e)
-                                _errorMessage.value = "Ordine salvato nel database, ma errore nell'invio alla cucina: ${e.message}"
+                                Log.e("DEBUG_MENU_ORDER", "Wi-Fi sending error: ${e.message}", e)
+                                _errorMessage.value = "Order saved in database, but error sending to kitchen: ${e.message}"
                             } finally {
-                                // Assicurati che le risorse vengano sempre chiuse
                                 writer?.close()
                                 socket?.close()
-                                Log.d("DEBUG_MENU_ORDER", "Socket e Writer chiusi.")
+                                Log.d("DEBUG_MENU_ORDER", "Socket and Writer closed.")
                             }
 
                         } else {
-                            Log.e("DEBUG_MENU_ORDER", "Indirizzo IP della cucina non disponibile.")
-                            _errorMessage.value = "Ordine salvato nel database, ma impossibile trovare il server della cucina."
+                            Log.e("DEBUG_MENU_ORDER", "Kitchen IP address unavailable.")
+                            _errorMessage.value = "Order saved in database, but kitchen server not found."
                         }
 
-                        // Continua con il resto della logica dopo l'invio
                         updateMenuItemQuantities()
                         _orderConfirmed.value = true
 
                     } else {
                         val errorBody = response.errorBody()?.string()
-                        Log.e("DEBUG_MENU_ORDER", "Errore invio ordine al database: ${response.code()} - $errorBody")
-                        _errorMessage.value = "Errore nell'invio dell'ordine: ${response.code()}"
+                        Log.e("DEBUG_MENU_ORDER", "Error sending order to database: ${response.code()} - $errorBody")
+                        _errorMessage.value = "Error sending order: ${response.code()}"
                     }
                 } catch (e: IOException) {
-                    _errorMessage.value = "Errore di connessione. Controlla la tua rete."
+                    _errorMessage.value = "Connection error. Check your network.."
                 } catch (e: HttpException) {
-                    _errorMessage.value = "Errore HTTP: ${e.code()}"
+                    _errorMessage.value = "HTTP error: ${e.code()}"
                 } finally {
                     _isLoading.value = false
                 }
@@ -229,7 +223,7 @@ class MenuOrderViewModel (
                     if (!response.isSuccessful) {
                         val errorBody = response.errorBody()?.string()
                         Log.e("DEBUG_MENU_ORDER", "Update failed for $menuItemName: ${response.code()} - Error: $errorBody")
-                        _errorMessage.value = "Errore nell'aggiornamento dell'articolo $menuItemName: ${response.code()}"
+                        _errorMessage.value = "Error updating article $menuItemName: ${response.code()}"
                         _isLoading.value = false
                         _orderConfirmed.value = false
                         return@launch
@@ -242,7 +236,7 @@ class MenuOrderViewModel (
                 _orderConfirmed.value = true
 
             } catch (e: Exception) {
-                _errorMessage.value = "Errore durante l'aggiornamento del menu: ${e.message}"
+                _errorMessage.value = "Error while updating menu: ${e.message}"
                 _isLoading.value = false
                 _orderConfirmed.value = false
             } finally {
@@ -260,27 +254,28 @@ class MenuOrderViewModel (
         _totalPrice.value = total
     }
 
+    // NSD: Network Service Discovery
     private fun startDiscovery() {
         nsdManager = getApplication<Application>().getSystemService(Context.NSD_SERVICE) as NsdManager
 
         discoveryListener = object : NsdManager.DiscoveryListener {
-            override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) { Log.e("NSD", "Avvio scoperta fallito: $errorCode") }
-            override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) { Log.e("NSD", "Arresto scoperta fallito: $errorCode") }
-            override fun onDiscoveryStarted(serviceType: String?) { Log.d("NSD", "Scoperta avviata: $serviceType") }
-            override fun onDiscoveryStopped(serviceType: String?) { Log.d("NSD", "Scoperta arrestata: $serviceType") }
-            override fun onServiceLost(serviceInfo: NsdServiceInfo?) { Log.d("NSD", "Servizio perso: ${serviceInfo?.serviceName}") }
+            override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) { Log.e("NSD", "Discovery startup failed: $errorCode") }
+            override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) { Log.e("NSD", "Discovery startup failed: $errorCode") }
+            override fun onDiscoveryStarted(serviceType: String?) { Log.d("NSD", "Discovery underway: $serviceType") }
+            override fun onDiscoveryStopped(serviceType: String?) { Log.d("NSD", "Discovery arrested: $serviceType") }
+            override fun onServiceLost(serviceInfo: NsdServiceInfo?) { Log.d("NSD", "Lost service: ${serviceInfo?.serviceName}") }
 
             override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
                 if (serviceInfo?.serviceType == serviceType) {
-                    Log.d("NSD", "Servizio trovato: ${serviceInfo.serviceName}")
+                    Log.d("NSD", "Service found: ${serviceInfo.serviceName}")
                     // Trovato un servizio del tipo giusto, ora risolviamolo per ottenere l'IP
                     nsdManager?.resolveService(serviceInfo, object : NsdManager.ResolveListener {
                         override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                            Log.e("NSD", "Risoluzione del servizio fallita: $errorCode")
+                            Log.e("NSD", "Service resolution failed: $errorCode")
                         }
                         override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
                             val ipAddress = serviceInfo?.host?.hostAddress
-                            Log.d("NSD", "IP della cucina risolto: $ipAddress")
+                            Log.d("NSD", "Kitchen IP fixed: $ipAddress")
                             _kitchenIpAddress.postValue(ipAddress)
                             stopDiscovery()
                         }

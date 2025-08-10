@@ -26,28 +26,28 @@ class AddMenuViewModel(private val userId: String) : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
-                val newMenuItemRequest = menuItem.copy(idUser = userId) // Assicurati di usare idUser
+                val newMenuItemRequest = menuItem.copy(idUser = userId)
                 val response = apiService.insertMenuItem(userId, newMenuItemRequest)
 
                 if (response.isSuccessful) {
                     _uiState.value = _uiState.value.copy(
-                        successMessage = "Articolo ${menuItem.name} aggiunto con successo!",
+                        successMessage = "Article ${menuItem.name} added successfully!",
                         isLoading = false
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(
-                        errorMessage = "Errore nell'aggiunta dell'articolo: ${response.code()}",
+                        errorMessage = "Error adding article: ${response.code()}",
                         isLoading = false
                     )
                 }
             } catch (e: IOException) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Errore di connessione. Controlla la tua rete.",
+                    errorMessage = "Connection error. Check your network..",
                     isLoading = false
                 )
             } catch (e: HttpException) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Errore HTTP: ${e.code()}",
+                    errorMessage = "HTTP error: ${e.code()}",
                     isLoading = false
                 )
             }

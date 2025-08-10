@@ -1,30 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:background="@color/white"
     android:gravity="center_vertical"
-    android:paddingVertical="8dp"
-    android:background="@android:color/white">
+    android:orientation="horizontal"
+    android:paddingVertical="8dp">
 
     <TextView
         android:id="@+id/tv_dish_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:textColor="@android:color/black"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
         tools:text="Pizza Margherita" />
 
     <TextView
         android:id="@+id/tv_dish_price"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/black"
         android:textSize="16sp"
-        android:textColor="@android:color/holo_green_dark"
         tools:text="€ 8.50" />
 
     <Button
@@ -32,9 +31,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="Fatto"
-        android:padding="8dp"
-        android:minHeight="0dp"
         android:backgroundTint="@color/design_default_color_secondary"
-        android:textColor="@android:color/white" />
+        android:minHeight="0dp"
+        android:padding="8dp"
+        android:text="Done"
+        android:textColor="@color/white" />
 </LinearLayout>

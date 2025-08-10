@@ -23,6 +23,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class KitchenViewModel(application: Application) : AndroidViewModel(application) {
@@ -30,22 +31,22 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     private val _kitchenOrders = MutableLiveData<List<Order>>()
     val kitchenOrders: LiveData<List<Order>> = _kitchenOrders
 
-    // Comunicazione via wifi
+    // Communication via wi-fi
     private val isServerRunning = AtomicBoolean(false)
     private var serverJob: Job? = null
     private var serverSocket: ServerSocket? = null
     private val gson = GsonBuilder().create()
 
-    // Registra il servizio per la ricerca dell'ip
+    // Register the service for IP lookup
     private var nsdManager: NsdManager? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
 
-    // id del servizio
+    // Service IP
     private val serviceName = "KitchenService"
     private val serviceType = "_http._tcp."
     private val serverPort = 6000
 
-    // Mappatura degli ip che inviano ordini: tableName -> ip
+    // Mapping of IPs sending orders: tableName -> ip
     private val clientMap = mutableMapOf<String, String>()
 
     init {
@@ -80,22 +81,22 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
             serverJob = viewModelScope.launch(Dispatchers.IO) {
                 try {
                     serverSocket = ServerSocket(serverPort)
-                    Log.d("DEBUG_KITCHEN", "Server in ascolto sulla porta $serverPort...")
+                    Log.d("DEBUG_KITCHEN", "Server listening on port $serverPort...")
                     while (isServerRunning.get()) {
                         val clientSocket = serverSocket?.accept()
 
                         if (clientSocket != null) {
-                            Log.d("DEBUG_KITCHEN", "Connessione ricevuta da ${clientSocket.inetAddress.hostAddress}")
+                            Log.d("DEBUG_KITCHEN", "Connection received from ${clientSocket.inetAddress.hostAddress}")
                             launch {
                                 handleClient(clientSocket)
                             }
                         }
                     }
                 } catch (e: SocketException) {
-                    // Si verifica quando il server viene interrotto (fine di vita del viewmodel)
-                    Log.d("DEBUG_KITCHEN", "Server interrotto: ${e.message}")
+                    // Occurs when the server is stopped (viewmodel end of life)
+                    Log.d("DEBUG_KITCHEN", "Server stopped: ${e.message}")
                 } catch (e: Exception) {
-                    Log.e("DEBUG_KITCHEN", "Errore durante il server: ${e.message}")
+                    Log.e("DEBUG_KITCHEN", "Server error: ${e.message}")
                 } finally {
                     isServerRunning.set(false)
                     serverSocket?.close()
@@ -112,27 +113,27 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
                 val jsonString = reader.readLine() // lettura di una sola riga
 
                 if(jsonString != null) {
-                    Log.d("DEBUG_KITCHEN", "Dati Json ricevuti: $jsonString")
+                    Log.d("DEBUG_KITCHEN", "JSON data received: $jsonString")
                     try {
                         val order = gson.fromJson(jsonString, Order::class.java)
                         val clientIp = socket.inetAddress.hostAddress
-                        Log.d("DEBUG_KITCHEN", "Ordine ricevuto per tavolo ${order.tableId}, IP: $clientIp")
+                        Log.d("DEBUG_KITCHEN", "Order received for table ${order.tableId}, IP: $clientIp")
                         clientMap[order.tableId] = clientIp!!
-                        // Passaggio dell'ordine all'UI tramite viewmodel
+                        // Passing order to UI via viewmodel
                         withContext(Dispatchers.Main) {
                             addOrder(order)
                         }
                     } catch (e: Exception) {
-                        Log.e("DEBUG_KITCHEN", "Errore nella conversione del Json: ${e.message}")
+                        Log.e("DEBUG_KITCHEN", "Error converting JSON: ${e.message}")
                     }
                 } else {
-                    Log.d("DEBUG_KITCHEN", "Nessun ordine ricevuto")
+                    Log.d("DEBUG_KITCHEN", "No orders received")
                 }
             }
         }
     }
 
-    // Chiude il server quando non è più necessario
+    // Shut down the server when it is no longer needed
     override fun onCleared() {
         super.onCleared()
         registrationListener?.let { nsdManager?.unregisterService(it) }
@@ -140,28 +141,29 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun stopListeningForOrders() {
-        Log.d("DEBUG_KITCHEN", "Tentativo di chiusura del server")
+        Log.d("DEBUG_KITCHEN", "Attempting to shut down the server")
         isServerRunning.set(false)
         serverJob?.cancel()
     }
 
     private fun addOrder(order: Order) {
         val currentList = _kitchenOrders.value.orEmpty().toMutableList()
-        // Controlla se un ordine per lo stesso tavolo è già presente
+        // Check if an order for the same table is already present
         val existingOrderIndex = currentList.indexOfFirst { it.tableId == order.tableId }
 
         if (existingOrderIndex != -1) {
-            // Se esiste, aggiorna l'ordine esistente aggiungendo i nuovi piatti
+            // If it exists, update the existing order by adding the new dishes
             val existingOrder = currentList[existingOrderIndex]
             val updatedDishes = existingOrder.dishes.toMutableList().apply {
                 addAll(order.dishes)
             }
             currentList[existingOrderIndex] = existingOrder.copy(dishes = updatedDishes)
         } else {
-            // Altrimenti, aggiungi il nuovo ordine alla lista
+            // Otherwise, add the new order to the list
             currentList.add(order)
         }
-        _kitchenOrders.value = currentList.sortedBy { it.tableId } // Ordina per numero di tavolo
+        // Sort by table number
+        _kitchenOrders.value = currentList.sortedBy { it.tableId }
     }
 
     fun removeDishFromOrder(orderId: String, displayDishItem: DisplayDishItem) {
@@ -170,16 +172,16 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
 
         if (orderToUpdate != null) {
             val updatedDishes = orderToUpdate.dishes.toMutableList()
-            // Trova il piatto da aggiornare in base al nome
+            // Find the dish to update by name
             val dishToRemove = updatedDishes.find { it.dishName == displayDishItem.dishItem.dishName }
 
             if (dishToRemove != null) {
-                // Decrementa la quantità
+                // Decrease the quantity
                 if (dishToRemove.quantity > 1) {
                     val index = updatedDishes.indexOf(dishToRemove)
                     updatedDishes[index] = dishToRemove.copy(quantity = dishToRemove.quantity - 1)
                 } else {
-                    // Se la quantità è 1, rimuovi il piatto dalla lista
+                    // If quantity is 1, remove the dish from the list
                     updatedDishes.remove(dishToRemove)
                 }
             }
@@ -203,8 +205,8 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
             currentList.remove(orderToRemove)
             _kitchenOrders.value = currentList
 
-            Log.d("DEBUG_KITCHEN", "Tentativo di invio notifica per tavolo $tableId.")
-            sendNotificationToClient(tableId, "L'ordine del tavolo $tableId completato")
+            Log.d("DEBUG_KITCHEN", "Attempt to send notification for table $tableId.")
+            sendNotificationToClient(tableId, "The order of the table $tableId completed")
         }
     }
 
@@ -215,24 +217,25 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
                 val timeout = 5000 // 5 seconds
 
                 try {
-                    Log.d("DEBUG_KITCHEN", "Tentativo di connessione a $clientIp sulla porta 6001 per notifica con timeout di $timeout ms.")
+                    Log.d("DEBUG_KITCHEN", "Attempting to connect to $clientIp on port 6001 for notification with timeout $timeout ms.")
 
                     val socket = Socket()
                     socket.connect(InetSocketAddress(clientIp, 6001), timeout)
 
                     PrintWriter(OutputStreamWriter(socket.getOutputStream()), true).use { writer ->
-                        Log.d("DEBUG_KITCHEN", "Socket connesso, invio messaggio: $message")
+                        Log.d("DEBUG_KITCHEN", "Socket connected, sending message: $message")
                         writer.println(message)
                     }
                     socket.close()
                     clientMap.remove(tableId)
-                    Log.d("DEBUG_KITCHEN", "Notifica inviata con successo a $clientIp.")
+                    Log.d("DEBUG_KITCHEN", "Notification successfully sent to $clientIp.")
+                } catch (e: SocketTimeoutException) {
+                    Log.d("DEBUG_KITCHEN", "Timeout occurred while connecting to $clientIp.")
                 } catch (e: Exception) {
-                    // In caso di timeout, verrà lanciata una SocketTimeoutException
-                    Log.e("DEBUG_KITCHEN", "Errore nell'invio notifica a $clientIp: ${e.message}")
+                    Log.e("DEBUG_KITCHEN", "Error sending notification to $clientIp: ${e.message}")
                 }
             } else {
-                Log.e("DEBUG_KITCHEN", "Nessun IP trovato per il tavolo $tableId.")
+                Log.e("DEBUG_KITCHEN", "No IP found for the table $tableId.")
             }
         }
     }

@@ -23,57 +23,49 @@ class Login : Fragment() {
         )
     }
 
-    // Dichiarazione dell'istanza per l'email
     private lateinit var emailInstance: EditText
 
-    // Dichiarazione dell'istanza per la password
     private lateinit var passwordInstance: EditText
 
-    // Dichiarazione button next
     private lateinit var nextButton: Button
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_login, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Inizializzazione dell'istanza per l'email
         emailInstance = view.findViewById(R.id.login_email)
-        // Inizializzazione dell'istanza per la password
         passwordInstance = view.findViewById(R.id.login_password)
-        // Inizializzazione del button next
         nextButton = view.findViewById(R.id.login_next)
         val navController = findNavController()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.userSessionState.collectLatest { state ->
                 if (state.isLoading) {
-                    // Pulsante disabilitato durante il login
+                    // Button disabled during login
                     nextButton.isEnabled = false
                 } else {
                     nextButton.isEnabled = true
                 }
 
-                // Messaggi di errore
+                // Error messages
                 if (state.errorMessage != null) {
                     Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_LONG).show()
                 }
 
                 if (state.isLoggedIn) {
-                    Toast.makeText(requireContext(), "Accesso riuscito per ${state.email}!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Login successful for ${state.email}!", Toast.LENGTH_SHORT).show()
                     val action = LoginDirections.actionLoginToSelectionMode(state.email!!)
                     navController.navigate(action)
                 }
             }
         }
 
-        // Aggiunta di un listener al button next
         nextButton.setOnClickListener {
             val email = emailInstance.text.toString().trim()
             val password = passwordInstance.text.toString().trim()

@@ -11,7 +11,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Descrizione Piatto"
-        android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/textView_dialog_description"
@@ -25,8 +27,10 @@
         android:id="@+id/button_dialog_close"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:layout_gravity="end"
-        android:text="Chiudi" />
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#ff6750a4"
+        android:text="Close"
+        android:textColor="@color/white" />
 
 </LinearLayout>

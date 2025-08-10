@@ -15,7 +15,7 @@ import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withMatrix
 import com.example.arrangement_manager.retrofit.Table
 
-// Interfaccia di callback per comunicare le modifiche a un tavolo
+// Callback interfaces to communicate changes to a table
 interface OnTableUpdatedListener {
     fun onTableUpdated(table: Table)
 }
@@ -32,7 +32,7 @@ class TableArrangementView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr){
 
     // ----------------------------------------
-    // Variabili per la gestione dei tavoli
+    // Variables for table management
     private var tables: List<Table> = emptyList()
     private var selectedTable: Table? = null
     private var lastX: Float = 0f
@@ -43,23 +43,22 @@ class TableArrangementView @JvmOverloads constructor(
     private var isScaling = false
     private var inverseMatrix = Matrix()
 
-    // Stato per EditMode
     private var isEditMode = false
 
     // ----------------------------------------
-    // Listener che il Fragment imposta per ricevere le modifiche
+    // Listener that the Fragment sets to receive changes
     var onTableUpdatedListener: OnTableUpdatedListener? = null
     var onTableClickedListener: OnTableClickedListener? = null
 
     // ----------------------------------------
-    // Enum per lo stato del tocco
+    // Enum for touch state
     private enum class Mode {
         NONE, DRAG, RESIZE, PAN
     }
     private var mode: Mode = Mode.NONE
 
     // ----------------------------------------
-    // Oggetti Paint per disegnare i tavoli
+    // Paint objects for drawing tables
     private val tablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = "#42A5F5".toColorInt()
@@ -70,23 +69,24 @@ class TableArrangementView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
 
-    // Oggetto Paint per disegnare il bordo dei tavoli selezionati
+    // Paint object to draw the border of selected tables
     private val selectedTablePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 4f
         color = Color.RED
     }
 
+    // Paint object to draw the resize handle
     private val resizeHandlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = Color.BLUE
     }
 
     // ----------------------------------------
-    // Variabili e metodi per gestire lo zoom
+    // Variables and methods to manage zoom
     // -----------------------------------  -----
 
-    // Gestore dello zoom
+    // Zoom handler
     private val scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScaleBegin(detector: ScaleGestureDetector) : Boolean {
             isScaling = true
@@ -104,18 +104,14 @@ class TableArrangementView @JvmOverloads constructor(
             val focusX = detector.focusX
             val focusY = detector.focusY
 
-            // Pre-moltiplica la matrice per trasare il punto focale sull'orgine
-            // applicare la scala e poi traslare nuovamente il punto focale alla sua
-            // posizione originale
             matrix.postScale(scaleFactor, scaleFactor, focusX, focusY)
             invalidate()
             return true
         }
     })
 
-    // Gestore per pan e click
+    // Pan and click handler
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
-        // Gestione del pan
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             if(!isScaling && !isEditMode) {
                 matrix.postTranslate(-distanceX, -distanceY)
@@ -125,9 +121,8 @@ class TableArrangementView @JvmOverloads constructor(
             return false
         }
 
-        // Gestione del tocco singolo
         override fun onSingleTapUp(e: MotionEvent): Boolean {
-            // Calcola la matrice inversa per convertire le coordinate del tocco
+            // Calculate the inverse matrix to convert the touch coordinates
             matrix.invert(inverseMatrix)
             val transformedPoints = floatArrayOf(e.x, e.y)
             inverseMatrix.mapPoints(transformedPoints)
@@ -140,12 +135,12 @@ class TableArrangementView @JvmOverloads constructor(
                     selectedTable = tappedTable
                     invalidate()
                 } else {
-                    // Chiama il listener del click solo se non siamo in modalità di modifica
+                    // Calls the click listener only if we are not in edit mode
                     onTableClickedListener?.onTableClicked(tappedTable)
                 }
                 return true
             }
-            // Deseleziona il tavolo se il tocco è su un'area vuota
+            // Deselect the table if the touch is on an empty area
             if (isEditMode) {
                 selectedTable = null
                 invalidate()
@@ -156,17 +151,17 @@ class TableArrangementView @JvmOverloads constructor(
 
 
     // ----------------------------------------
-    // Metodi per aggiornare la View
+    // Methods to update the View
     // ----------------------------------------
 
-    // Metodo per aggiornare la lista dei tavoli
+    // Method to update the table list
     fun setTables(newTables: List<Table>) {
         this.tables = newTables
         if(isEditMode)
             selectedTable = tables.find { it.name == selectedTable?.name }
         else
             selectedTable = null
-        // Invalida la vista per forzare la ridisegnazione con la nuova lista di tavoli.
+        // Invalidate the view to force it to redraw with the new table list
         invalidate()
     }
 
@@ -187,13 +182,12 @@ class TableArrangementView @JvmOverloads constructor(
         return selectedTable
     }
 
-    // metodo per disegnare la vista
+    // method for drawing the view
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // Applica trasformazioni di zoom e pan
+        // Apply zoom and pan transformations
         canvas.withMatrix(matrix) {
-            // Itera sulla lista dei tavoli e disegna ogni rettangolo
             tables.forEach { table ->
                 reusableRect.set(
                     table.xCoordinate.toFloat(),
@@ -201,13 +195,13 @@ class TableArrangementView @JvmOverloads constructor(
                     table.xCoordinate.toFloat() + table.width.toFloat(),
                     table.yCoordinate.toFloat() + table.height.toFloat()
                 )
-                // Disegna il rettangolo
+                // Draw the table
                 drawRect(reusableRect, tablePaint)
                 val textX = reusableRect.centerX()
                 val textY =
                     reusableRect.centerY() - ((tableText.descent() + tableText.ascent()) / 2)
                 drawText(table.name, textX, textY, tableText)
-                // Disegna il bordo e il maniglione del rettangolo
+                // Highlight the selected table
                 if (isEditMode && table.name == selectedTable?.name) {
                     drawRect(reusableRect, selectedTablePaint)
 
@@ -219,16 +213,14 @@ class TableArrangementView @JvmOverloads constructor(
         }
     }
 
-    // Gestione degli eventi touch
+    // Touch event management
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         scaleGestureDetector.onTouchEvent(event!!)
 
-        // Se lo zoom è in corso, non fare null'altro.
         if (isScaling) {
             return true
         }
 
-        // Gestisci il pan solo se NON stai facendo un drag o resize
         if (!isEditMode) {
             gestureDetector.onTouchEvent(event)
             return true
@@ -236,7 +228,7 @@ class TableArrangementView @JvmOverloads constructor(
         val currentX = event.x
         val currentY = event.y
 
-        // Calcola la matrice inversa per convertire le coordinate del tocco
+        // Calculate the inverse matrix to convert the touch coordinates
         matrix.invert(inverseMatrix)
         val trasformedPoints = floatArrayOf(currentX, currentY)
         inverseMatrix.mapPoints(trasformedPoints)
@@ -295,7 +287,7 @@ class TableArrangementView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP -> {
                 if(selectedTable != null && onTableUpdatedListener != null) {
-                    // comunica al fragment che il tavolo è stato aggiornato
+                    // Tell the fragment that the table has been updated
                     onTableUpdatedListener?.onTableUpdated(selectedTable!!)
                 }
                 mode = Mode.NONE

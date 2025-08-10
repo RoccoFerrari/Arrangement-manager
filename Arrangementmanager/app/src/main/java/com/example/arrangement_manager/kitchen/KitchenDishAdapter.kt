@@ -13,7 +13,8 @@ class KitchenDishAdapter(
 
     fun submitList(list: List<DisplayDishItem>) {
         this.dishes = list
-        notifyDataSetChanged() // Notifica l'adapter che i dati sono cambiati
+        // Notify the adapter that the data has changed
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DishViewHolder {

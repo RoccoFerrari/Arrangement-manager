@@ -10,7 +10,7 @@ import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.arrangement_manager.databinding.FragmentOrderKitchenBinding // Assicurati di avere il layout corretto per il Fragment
 
-// Classi per i dati (rimangono invariate, puoi lasciarle dove sono)
+
 data class DishItem(
     val dishName: String,
     val price: Float,
@@ -25,15 +25,12 @@ data class Order(
 
 class KitchenFragment : Fragment() {
 
-    // Utilizza un ViewBinding per i Fragment, con l'accortezza di gestirne il ciclo di vita
     private var _binding: FragmentOrderKitchenBinding? = null
     private val binding get() = _binding!!
 
-    // Inizializza il ViewModel con viewModels() (funziona anche con i Fragment)
     private val viewModel: KitchenViewModel by viewModels()
     private lateinit var adapter: KitchenOrderAdapter
 
-    // Crea la view del Fragment
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -42,7 +39,6 @@ class KitchenFragment : Fragment() {
         return binding.root
     }
 
-    // Qui gestisci la logica della vista, dopo che è stata creata
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -53,24 +49,21 @@ class KitchenFragment : Fragment() {
     private fun setupRecyclerView() {
         binding.rvKitchenOrders.layoutManager = LinearLayoutManager(requireContext())
 
-        // Passa il contesto corretto all'adattatore
         adapter = KitchenOrderAdapter(
             onDishReady = { orderId, dishItem ->
                 Toast.makeText(requireContext(), "Piatto '${dishItem.dishItem.dishName}' dell'ordine $orderId pronto!", Toast.LENGTH_SHORT).show()
                 viewModel.removeDishFromOrder(orderId, dishItem)
-                // TODO: Implementa qui la logica per notificare il cameriere
             },
             onOrderReady = { orderId ->
                 Toast.makeText(requireContext(), "Ordine per tavolo $orderId completato!", Toast.LENGTH_SHORT).show()
                 viewModel.removeOrder(orderId)
-                // TODO: Implementa qui la logica per notificare il cameriere
             }
         )
         binding.rvKitchenOrders.adapter = adapter
     }
 
     private fun observeViewModel() {
-        // Osserva il LiveData usando viewLifecycleOwner
+        // View LiveData using viewLifecycleOwner
         viewModel.kitchenOrders.observe(viewLifecycleOwner) { orders ->
             if (orders.isEmpty()) {
                 binding.tvNoOrders.visibility = View.VISIBLE
@@ -83,7 +76,6 @@ class KitchenFragment : Fragment() {
         }
     }
 
-    // Pulisci il binding per evitare memory leak
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

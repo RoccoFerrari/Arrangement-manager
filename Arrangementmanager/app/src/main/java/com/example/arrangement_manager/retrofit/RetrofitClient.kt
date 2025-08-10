@@ -9,9 +9,9 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
 
-    // IP del server Flask
-    // Non si usa 127.0.0.1 perché questo indirizzo si riferisce alll'emulatore stesso
-    // si deve usare http://10.0.2.2:5000/
+    // Flask server IP
+    // Don't use 127.0.0.1 because this address refers to the emulator itself.
+    // Use http://10.0.2.2:5000/ to reference the localhost.
     // private const val BASE_URL = "http://192.168.1.34:5000/" // DT
     // private const val BASE_URL = "http://10.0.2.2:5000/" // LH
      private const val BASE_URL = "http://192.168.1.17:5000/" // LT
@@ -20,12 +20,11 @@ object RetrofitClient {
         .add(KotlinJsonAdapterFactory())
         .build()
 
-    // Interceptor per il logging (DEBUG)
+    // Logging interceptor
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    // OkHttpClient per aggiungere l'interceptor
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
         .build()

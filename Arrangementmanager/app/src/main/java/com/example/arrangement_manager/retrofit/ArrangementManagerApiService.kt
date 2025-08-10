@@ -10,7 +10,7 @@ import retrofit2.http.Path
 
 interface ArrangementManagerApiService {
 
-    // --- Gestione Utenti ---
+    // --- Users ---
 
     @POST("users/register")
     suspend fun registerUser(@Body user: User): Response<User>
@@ -18,7 +18,7 @@ interface ArrangementManagerApiService {
     @POST("users/login")
     suspend fun loginUser(@Body user: User): Response<LoginResponse>
 
-    // --- Gestione Tavoli ---
+    // --- Tables ---
 
     @GET("users/{userId}/tables")
     suspend fun getAllTablesByUser(@Path("userId") userId: String): Response<List<Table>>
@@ -37,7 +37,7 @@ interface ArrangementManagerApiService {
     suspend fun deleteTable(@Path("userId") userId: String, @Path("name") tableName: String): Response<Void>
 
 
-    // --- Gestione Menu ---
+    // --- Menu ---
 
     @GET("users/{userId}/menu")
     suspend fun getAllMenuByUser(@Path("userId") userId: String): Response<List<MenuItem>>
@@ -56,7 +56,7 @@ interface ArrangementManagerApiService {
     suspend fun deleteMenuItem(@Path("userId") userId: String, @Path("name") menuName: String): Response<Void>
 
 
-    // --- Gestione Ordini ---
+    // --- Orders ---
 
     @POST("users/{userId}/orders")
     suspend fun insertOrderEntries(

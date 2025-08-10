@@ -11,13 +11,12 @@
         android:id="@+id/tableArrangementView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@android:color/white"
+        android:background="@color/white"
         app:layout_constraintBottom_toTopOf="@+id/layout_buttons_bottom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Un unico LinearLayout per tutti i bottoni, ancorato al fondo della pagina -->
     <LinearLayout
         android:id="@+id/layout_buttons_bottom"
         android:layout_width="0dp"
@@ -33,16 +32,20 @@
             android:id="@+id/editButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginEnd="4dp"
-            android:text="Edit layout" />
+            android:layout_weight="1"
+            android:backgroundTint="#ff6750a4"
+            android:text="Edit layout"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/addMenu"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#ff6750a4"
+            android:textColor="@color/white"
             android:text="Add Menu" />
 
         <Button
@@ -51,7 +54,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
+            android:backgroundTint="#ff6750a4"
             android:text="Add Table"
+            android:textColor="@color/white"
             android:visibility="gone" />
 
         <Button
@@ -60,7 +65,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
+            android:backgroundTint="#ff6750a4"
             android:text="Delete table"
+            android:textColor="@color/white"
             android:visibility="gone"/>
 
         <Button
@@ -68,7 +75,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:backgroundTint="#ff6750a4"
             android:text="Done"
+            android:textColor="@color/white"
             android:visibility="gone"/>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,29 +1,18 @@
 package com.example.arrangement_manager.table_arrangement
 
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
 import com.example.arrangement_manager.retrofit.Table
 import com.example.arrangement_manager.retrofit.TableUpdate
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import retrofit2.HttpException
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
-import java.net.ServerSocket
-import java.net.SocketException
 
-// Classe che gestisce lo stato dell'UI
+// Class that manages UI state
 data class TableUiState(
     val isLoading: Boolean = false,
     val tables: List<Table> = emptyList(),
@@ -37,7 +26,7 @@ class TableArrangementViewModel(
     private val _uiState = MutableStateFlow(TableUiState())
     val uiState: StateFlow<TableUiState> = _uiState.asStateFlow()
 
-    // Eseguita quando il ViewModel viene creato
+    // Executed when the ViewModel is created
     init {
         loadTables()
     }
@@ -70,9 +59,7 @@ class TableArrangementViewModel(
         }
     }
 
-
-
-    // Metodo per aggiungere un nuovo tavolo
+    // Method to add a new table
     fun addTable() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
@@ -112,11 +99,11 @@ class TableArrangementViewModel(
         }
     }
 
-    // Metodo per aggiornare un tavolo esistente
+    // Method to update an existing table
     fun updateTable(table: Table) {
         viewModelScope.launch {
             try {
-                // Prepara un oggetto TableUpdate con i dati aggiornati
+                // Prepares a TableUpdate object with the updated data
                 val tableUpdate = TableUpdate(
                     xCoordinate = table.xCoordinate,
                     yCoordinate = table.yCoordinate,
@@ -125,7 +112,7 @@ class TableArrangementViewModel(
                 )
                 val response = apiService.updateTable(userEmail, table.name, tableUpdate)
                 if (response.isSuccessful) {
-                    // Aggiorna la lista di tavoli con i dati del server
+                    // Update the table list with server data
                     loadTables()
                 } else {
                     _uiState.value = _uiState.value.copy(
@@ -140,13 +127,13 @@ class TableArrangementViewModel(
         }
     }
 
-    // Metodo per eliminare un tavolo
+    // Method to delete a table
     fun deleteTable(table: Table) {
         viewModelScope.launch {
             try {
                 val response = apiService.deleteTable(userEmail, table.name)
                 if (response.isSuccessful) {
-                    // Dopo l'eliminazione, ricarica l'intera lista
+                    // After deleting, reload the entire list
                     loadTables()
                 } else {
                     _uiState.value = _uiState.value.copy(

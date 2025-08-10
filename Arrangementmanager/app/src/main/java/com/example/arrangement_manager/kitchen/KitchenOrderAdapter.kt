@@ -9,7 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.arrangement_manager.databinding.ItemKitchenOrderBinding
 import java.util.UUID
 
-// Wrapper per i dati del piatto con un ID univoco
+// Wrapper for plate data with a unique ID
 data class DisplayDishItem(
     val id: String = UUID.randomUUID().toString(),
     val dishItem: DishItem
@@ -34,11 +34,11 @@ class KitchenOrderAdapter(
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(order: Order) {
-            binding.tvTableNumber.text = "Tavolo: ${order.tableId}"
+            binding.tvTableNumber.text = "Table: ${order.tableId}"
             val total = order.dishes.sumOf { it.price.toDouble() * it.quantity }
-            binding.tvOrderTotal.text = "Totale: € %.2f".format(total)
+            binding.tvOrderTotal.text = "Total: € %.2f".format(total)
 
-            // Setup dell'adapter interno per i piatti
+            // Setting up the internal adapter for the cymbals
             val dishAdapter = KitchenDishAdapter { displayDishItem ->
                 onDishReady(order.orderId, displayDishItem)
             }
@@ -46,7 +46,7 @@ class KitchenOrderAdapter(
             binding.rvDishesInOrder.adapter = dishAdapter
             binding.rvDishesInOrder.layoutManager = LinearLayoutManager(binding.root.context)
 
-            // Permette di vedere un piatto un numero 'quantity' di volte
+            // Allows to see a dish a 'quantity' number of times
             val expandedDishes = mutableListOf<DisplayDishItem>()
             order.dishes.forEach { dish ->
                 repeat(dish.quantity) {
@@ -54,10 +54,10 @@ class KitchenOrderAdapter(
                 }
             }
 
-            // Usa submitList per aggiornare la lista dei piatti
+            // Use submitList to update the dish list
             dishAdapter.submitList(expandedDishes)
 
-            // Listener per il pulsante "Ordine Completato"
+            // Listener for the "Order Complete" button
             binding.btnCompleteOrder.setOnClickListener {
                 onOrderReady(order.orderId)
             }

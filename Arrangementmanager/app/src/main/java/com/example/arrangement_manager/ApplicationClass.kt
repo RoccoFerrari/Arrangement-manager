@@ -4,7 +4,7 @@ import android.app.Application
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 
-class YourApplicationClass : Application() {
+class ApplicationClass : Application() {
     val applicationScope = CoroutineScope(SupervisorJob())
 
     override fun onCreate() {

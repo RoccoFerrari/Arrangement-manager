@@ -94,14 +94,14 @@ class MenuOrderDialogFragment : DialogFragment() {
     }
 
     private fun observeViewModel() {
-        // Osserva la lista di menu items
+        // Observe at the list of menu items
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.menuItems.collectLatest { newMenuItems ->
                 val orderedQuantities = viewModel.orderedItems.value
                 menuAdapter.updateItems(newMenuItems, orderedQuantities)
             }
         }
-        // Osserva le quantità ordinate
+        // Observe the list of ordered quantities
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.orderedItems.collectLatest { newOrderedQuantities ->
                 val menuItems = viewModel.menuItems.value
@@ -109,23 +109,22 @@ class MenuOrderDialogFragment : DialogFragment() {
             }
         }
 
-        // Osserva lo stato del pulsante combinando isLoading e isConfirmButtonEnabled
+        // Observe the confirm button state
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isConfirmButtonEnabled.collectLatest { isEnabled ->
-                // Controlla anche lo stato di caricamento per evitare clic multipli
                 binding.buttonConfirmOrder.isEnabled = isEnabled && !viewModel.isLoading.value
             }
         }
 
-        // Osserva lo stato di caricamento
+        // Observe the loading state
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isLoading.collectLatest { isLoading ->
-                // Aggiorna lo stato del pulsante in base a isConfirmButtonEnabled e isLoading
+                // Update the button state based on isConfirmButtonEnabled and isLoading
                 binding.buttonConfirmOrder.isEnabled = viewModel.isConfirmButtonEnabled.value && !isLoading
             }
         }
 
-        // Osserva i messaggi di errore
+        // Observe the error messages
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.errorMessage.collectLatest { errorMessage ->
                 if (errorMessage != null) {
@@ -134,7 +133,7 @@ class MenuOrderDialogFragment : DialogFragment() {
             }
         }
 
-        // Osserva se l'ordine è stato confermato
+        // Observe if the order has been confirmed
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.orderConfirmed.collectLatest { confirmed ->
                 if (confirmed) {
@@ -143,7 +142,7 @@ class MenuOrderDialogFragment : DialogFragment() {
             }
         }
 
-        // Osserva il prezzo totale
+        // Observe the total price
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.totalPrice.collectLatest { newTotalPrice ->
                 val priceFormat = DecimalFormat("0.00")

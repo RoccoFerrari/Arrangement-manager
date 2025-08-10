@@ -21,12 +21,12 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loginOrRegister(email: String, password: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            // Reimposta lo stato all'inizio di ogni tentativo
+            // Reset state at the start of each attempt
             _userSessionState.value =
                 _userSessionState.value.copy(isLoading = true, errorMessage = null)
             val user = User(email = email, password = password)
             try {
-                // Prova a eseguire il login
+                // Try logging in
                 val loginResponse = apiService.loginUser(user)
 
                 if (loginResponse.isSuccessful) {
@@ -41,51 +41,51 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     } else {
                         _userSessionState.value = _userSessionState.value.copy(
                             isLoading = false,
-                            errorMessage = "Risposta del server non valida."
+                            errorMessage = "Invalid server response."
                         )
                     }
                 } else {
                     when (loginResponse.code()) {
-                        // Credenziali non valide (l'email esiste ma la password è sbagliata)
+                        // Credentials not valid (email exists but wrong password)
                         401 -> {
                             _userSessionState.value = _userSessionState.value.copy(
                                 isLoading = false,
-                                errorMessage = "Email o password errati."
+                                errorMessage = "Email or password wrong."
                             )
                         }
-                        // Utente non trovato (l'email non esiste), prova a registrarlo
+                        // User not found (email address does not exist), try registering
                         404 -> {
                             tryRegisterUser(user)
                         }
-                        // Errore generico
+                        // Generic error
                         else -> {
                             _userSessionState.value = _userSessionState.value.copy(
                                 isLoading = false,
-                                errorMessage = "Errore di login: ${loginResponse.message()}"
+                                errorMessage = "Login error: ${loginResponse.message()}"
                             )
                         }
                     }
                 }
             } catch (e: HttpException) {
-                // Gestione dell'eccezione HTTP: Not Found (404)
+                // HTTP Exception Handling: Not Found (404)
                 if (e.code() == 404) {
                     tryRegisterUser(user)
                 } else {
                     _userSessionState.value = _userSessionState.value.copy(
                         isLoading = false,
-                        errorMessage = "Errore di login: ${e.message}"
+                        errorMessage = "Login error: ${e.message}"
                     )
                 }
             } catch (e: IOException) {
-                // Errore di rete (es. disconnessione)
+                // Network error (e.g. disconnection)
                 _userSessionState.value = _userSessionState.value.copy(
                     isLoading = false,
-                    errorMessage = "${e.message}") // Errore di connessione. Errore:
+                    errorMessage = "${e.message}")
             } catch (e: Exception) {
-                // Errore generico inaspettato
+                // Unexpected generic error
                 _userSessionState.value = _userSessionState.value.copy(
                     isLoading = false,
-                    errorMessage = "Errore inaspettato: ${e.message}"
+                    errorMessage = "Unexpected error: ${e.message}"
                 )
             }
         }
@@ -95,7 +95,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             _userSessionState.value = _userSessionState.value.copy(isLoading = true, errorMessage = null)
             try {
-                // Registrazione
+                // Registration
                 val registerResponse = apiService.registerUser(user)
 
                 if (registerResponse.isSuccessful) {
@@ -103,18 +103,18 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     if (registeredUser != null) {
                         _userSessionState.value = UserSession(email = registeredUser.email, isLoggedIn = true, isLoading = false)
                     } else {
-                        _userSessionState.value = _userSessionState.value.copy(isLoading = false, errorMessage = "Risposta di registrazione non valida.")
+                        _userSessionState.value = _userSessionState.value.copy(isLoading = false, errorMessage = "Invalid registration response.")
                     }
                 } else {
-                    // Gestione dell'errore di registrazione
+                    // Registration error handling
                     val errorMessage = when (registerResponse.code()) {
-                        409 -> "L'email esiste già."
-                        else -> "Errore di registrazione: ${registerResponse.message()}"
+                        409 -> "The email already exists."
+                        else -> "Registration error: ${registerResponse.message()}"
                     }
                     _userSessionState.value = _userSessionState.value.copy(isLoading = false, errorMessage = errorMessage)
                 }
             } catch (e: Exception) {
-                _userSessionState.value = _userSessionState.value.copy(isLoading = false, errorMessage = "Errore di rete o server: ${e.message}")
+                _userSessionState.value = _userSessionState.value.copy(isLoading = false, errorMessage = "Network or server error: ${e.message}")
             }
         }
     }

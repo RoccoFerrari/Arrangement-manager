@@ -1,6 +1,7 @@
 package com.example.arrangement_manager.notification
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -19,7 +20,6 @@ import androidx.core.content.ContextCompat
 import com.example.arrangement_manager.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -34,10 +34,20 @@ class NotificationService : Service() {
     private var serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
+    // Constants for foreground service notification
+    companion object {
+        const val FOREGROUND_CHANNEL_ID = "ForegroundServiceChannel"
+        const val FOREGROUND_NOTIFICATION_ID = 101
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        createNotificationChannel()
+        val notification = createForegroundNotification()
+
+        startForeground(FOREGROUND_NOTIFICATION_ID, notification)
+
         startListening()
-        // Riavvia il service se viene eliminato dal sistema
+
         return START_STICKY
     }
 
@@ -45,9 +55,30 @@ class NotificationService : Service() {
         return null
     }
 
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                FOREGROUND_CHANNEL_ID,
+                "Canale Servizio in Primo Piano",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            val manager = getSystemService(NotificationManager::class.java) as NotificationManager
+            manager.createNotificationChannel(serviceChannel)
+        }
+    }
+
+    private fun createForegroundNotification(): Notification {
+        return NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID)
+            .setContentTitle("Gestore Ordini Attivo")
+            .setContentText("In ascolto per nuove notifiche di ordini.")
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Usa l'icona della tua app
+            .setPriority(NotificationCompat.PRIORITY_LOW) // Priorità bassa per non disturbare
+            .build()
+    }
+
     private fun startListening() {
         serviceScope.launch {
-            try{
+            try {
                 val notificationServerSocket = ServerSocket(notificationPort)
                 Log.d("DEBUG_NOTIFICATION", "Server in ascolto sulla porta $notificationPort")
                 while (isActive) {
@@ -55,7 +86,7 @@ class NotificationService : Service() {
                     val clientIp = clientSocket.inetAddress.hostAddress
                     Log.d(
                         "DEBUG_NOTIFICATION",
-                        "Connessione notifica ricevuta da ${clientIp}"
+                        "Connessione notifica ricevuta da $clientIp"
                     )
                     launch {
                         handleClientNotification(clientSocket)
@@ -89,7 +120,7 @@ class NotificationService : Service() {
         val notificationManager = NotificationManagerCompat.from(context)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("order_channel", "Notifiche Ordini", NotificationManager.IMPORTANCE_DEFAULT)
+            val channel = NotificationChannel("order_channel", "Notifiche Ordini", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
 
