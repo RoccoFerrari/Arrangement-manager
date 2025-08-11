@@ -29,6 +29,9 @@
         <action
             android:id="@+id/action_selectionMode_to_kitchenActivity"
             app:destination="@id/kitchenActivity" />
+        <action
+            android:id="@+id/action_selectionMode_to_settingsDialogFragment"
+            app:destination="@id/settingsDialogFragment" />
     </fragment>
     <fragment
         android:id="@+id/tableArrangementFragment"
@@ -89,5 +92,11 @@
         <argument
             android:name="dishDescription"
             app:argType="string" />
+    </dialog>
+
+    <dialog
+        android:id="@+id/settingsDialogFragment"
+        android:name="com.example.arrangement_manager.settings.SettingsDialogFragment"
+        tools:layout="@layout/dialog_settings">
     </dialog>
 </navigation>

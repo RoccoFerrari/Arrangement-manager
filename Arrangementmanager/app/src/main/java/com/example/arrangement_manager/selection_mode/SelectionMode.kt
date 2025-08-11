@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -27,6 +28,7 @@ class SelectionMode : Fragment() {
         val navController = findNavController()
         val ordersButton = view.findViewById<Button>(R.id.selection_mode_orders_button)
         val kitchenButton = view.findViewById<Button>(R.id.selection_mode_kitchen_button)
+        val settingsButton = view.findViewById<ImageButton>(R.id.settings_button)
 
         ordersButton.setOnClickListener {
             // Retrieve the email passed from the previous fragment
@@ -39,6 +41,10 @@ class SelectionMode : Fragment() {
 
         kitchenButton.setOnClickListener {
             navController.navigate(R.id.action_selectionMode_to_kitchenActivity)
+        }
+
+        settingsButton.setOnClickListener {
+            navController.navigate(R.id.action_selectionMode_to_settingsDialogFragment)
         }
     }
 }

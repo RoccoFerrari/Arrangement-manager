@@ -12,16 +12,16 @@
         android:id="@+id/tv_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Ordini in Preparazione"
-        android:textSize="28sp"
-        android:textStyle="bold"
+        android:background="@android:color/white"
         android:gravity="center"
         android:padding="16dp"
+        android:text="Orders in preparation"
         android:textColor="@android:color/black"
-        android:background="@android:color/white"
-        app:layout_constraintTop_toTopOf="parent"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_kitchen_orders"
@@ -43,12 +43,12 @@
         android:id="@+id/tv_no_orders"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Nessun ordine in attesa"
+        android:text="No orders waiting"
         android:textSize="20sp"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

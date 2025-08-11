@@ -59,7 +59,7 @@ class NotificationService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
                 FOREGROUND_CHANNEL_ID,
-                "Canale Servizio in Primo Piano",
+                "Foreground Service Channel",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
             val manager = getSystemService(NotificationManager::class.java) as NotificationManager
@@ -69,10 +69,10 @@ class NotificationService : Service() {
 
     private fun createForegroundNotification(): Notification {
         return NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID)
-            .setContentTitle("Gestore Ordini Attivo")
-            .setContentText("In ascolto per nuove notifiche di ordini.")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Usa l'icona della tua app
-            .setPriority(NotificationCompat.PRIORITY_LOW) // Priorità bassa per non disturbare
+            .setContentTitle("Active Order Manager")
+            .setContentText("Listening for new order notifications.")
+            .setSmallIcon(R.drawable.arrangement_manager)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
 
@@ -80,22 +80,22 @@ class NotificationService : Service() {
         serviceScope.launch {
             try {
                 val notificationServerSocket = ServerSocket(notificationPort)
-                Log.d("DEBUG_NOTIFICATION", "Server in ascolto sulla porta $notificationPort")
+                Log.d("DEBUG_NOTIFICATION", "Server listening on port $notificationPort")
                 while (isActive) {
                     val clientSocket = notificationServerSocket.accept()
                     val clientIp = clientSocket.inetAddress.hostAddress
                     Log.d(
                         "DEBUG_NOTIFICATION",
-                        "Connessione notifica ricevuta da $clientIp"
+                        "Connection notification received from $clientIp"
                     )
                     launch {
                         handleClientNotification(clientSocket)
                     }
                 }
             } catch (e: SocketException) {
-                Log.d("DEBUG_NOTIFICATION", "Listener chiuso")
+                Log.d("DEBUG_NOTIFICATION", "Listener closed")
             } catch (e: Exception) {
-                Log.e("DEBUG_NOTIFICATION", "Errore durante la connessione: ${e.message}")
+                Log.e("DEBUG_NOTIFICATION", "Error while connecting: ${e.message}")
             }
         }
     }
@@ -103,7 +103,7 @@ class NotificationService : Service() {
     private fun handleClientNotification(clientSocket: Socket) {
         val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
         val message = reader.readLine()
-        Log.d("DEBUG_NOTIFICATION", "Messaggio ricevuto: $message")
+        Log.d("DEBUG_NOTIFICATION", "Message received: $message")
 
         if(message != null) {
             showOrderReadyNotification(message)
@@ -120,13 +120,13 @@ class NotificationService : Service() {
         val notificationManager = NotificationManagerCompat.from(context)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("order_channel", "Notifiche Ordini", NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel("order_channel", "Order Notifications", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
 
         val builder = NotificationCompat.Builder(context, "order_channel")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Ordine Pronto!")
+            .setContentTitle("Order Ready!")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

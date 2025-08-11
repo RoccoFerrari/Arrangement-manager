@@ -14,7 +14,10 @@ object RetrofitClient {
     // Use http://10.0.2.2:5000/ to reference the localhost.
     // private const val BASE_URL = "http://192.168.1.34:5000/" // DT
     // private const val BASE_URL = "http://10.0.2.2:5000/" // LH
-     private const val BASE_URL = "http://192.168.1.17:5000/" // LT
+    // private const val BASE_URL = "http://192.168.1.17:5000/" // LT
+
+    private const val BASE_URL = "http://192.168.1.108:5000/"
+
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
