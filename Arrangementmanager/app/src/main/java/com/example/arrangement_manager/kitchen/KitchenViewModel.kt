@@ -230,6 +230,12 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         val orderToUpdate = currentList.find { it.orderId == orderId }
 
         if (orderToUpdate != null) {
+            // PK formed by tableId::dishName, so we split where '::' and keep the last part
+            val tableNumber = orderToUpdate.tableId.split("::Table ").last()
+            // Notification for ready dish
+            val message = "Dish '${displayDishItem.dishItem.dishName}' from table $tableNumber is ready!"
+            sendNotificationToClient(orderToUpdate.tableId, message)
+
             val updatedDishes = orderToUpdate.dishes.toMutableList()
             // Find the dish to update by name
             val dishToRemove = updatedDishes.find { it.dishName == displayDishItem.dishItem.dishName }
@@ -272,7 +278,7 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
             _kitchenOrders.value = currentList
 
             Log.d("DEBUG_KITCHEN", "Attempt to send notification for table $tableId.")
-            sendNotificationToClient(tableId, "The order of the table $tableId completed")
+            sendNotificationToClient(tableId, "Order of the table $tableId completed")
         }
     }
 

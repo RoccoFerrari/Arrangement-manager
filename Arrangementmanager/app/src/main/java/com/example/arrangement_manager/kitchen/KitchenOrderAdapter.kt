@@ -71,7 +71,8 @@ class KitchenOrderAdapter(
          * @param order The [Order] object to bind to the view.
          */
         fun bind(order: Order) {
-            binding.tvTableNumber.text = "Table: ${order.tableId}"
+            val tableNumber = order.tableId.split("::Table ").last()
+            binding.tvTableNumber.text = "Table: $tableNumber"
             val total = order.dishes.sumOf { it.price.toDouble() * it.quantity }
             binding.tvOrderTotal.text = "Total: € %.2f".format(total)
 
