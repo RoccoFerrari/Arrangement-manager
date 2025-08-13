@@ -1,5 +1,5 @@
-# Attivare Ambiente Virtuale: source venv/bin/activate
-# Compilare: python3 server.py
+# Activate Virtual Environment: source venv/bin/activate
+# Compile: python3 server.py
 
 import os
 from flask import Flask, request, jsonify
@@ -11,14 +11,14 @@ app = Flask(__name__)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Configurazione del database (SQLite)
+# Database configuration (SQLite)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'arrangement_manager.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # ------------------------------------------------------
-# MODELLI DEL DATABASE ---> @Entity di kotlin
+# DATABASE MODELS ---> Kotlin's @Entity
 
 class User(db.Model):
     __tablename__ = 'User'
@@ -30,7 +30,7 @@ class User(db.Model):
     order_entries = relationship("OrderEntry", backref="user", lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
-        """Metodo per serializzare l'oggetto User in un dizionario."""
+        """Method to serialize the User object into a dictionary"""
         return {
             'email': self.email,
             'password': self.password
@@ -46,7 +46,7 @@ class Table(db.Model):
     height = db.Column(db.Float, nullable=False)
 
     def to_dict(self):
-        """Metodo per serializzare l'oggetto Table in un dizionario."""
+        """Method to serialize the Table object into a dictionary"""
         return {
             'name': self.name,
             'x_coordinate': self.x_coordinate,
@@ -65,7 +65,7 @@ class MenuItem(db.Model):
     description = db.Column(db.String)
 
     def to_dict(self):
-        """Metodo per serializzare l'oggetto MenuItem in un dizionario."""
+        """Method to serialize the MenuItem object into a dictionary"""
         return {
             'name': self.name,
             'price': self.price,
@@ -95,7 +95,7 @@ class OrderEntry(db.Model):
     )
 
     def to_dict(self):
-        """Metodo per serializzare l'oggetto OrderEntry in un dizionario."""
+        """Method to serialize the OrderEntry object into a dictionary"""
         return {
             'table_name': self.table_name,
             'menu_item_name': self.menu_item_name,
@@ -104,7 +104,7 @@ class OrderEntry(db.Model):
         }
 
     def to_dict(self):
-        """Metodo per serializzare l'oggetto OrderEntry in un dizionario."""
+        """Method to serialize the OrderEntry object into a dictionary"""
         return {
             'table_name': self.table_name,
             'menu_item_name': self.menu_item_name,
@@ -113,21 +113,21 @@ class OrderEntry(db.Model):
         }
 
 # ------------------------------------------------------
-# ENDPOINT API ---> Funzioni DAO
+# ENDPOINT API ---> DAO Functions
 
-# Gestione Utenti
+# User management
 @app.route('/users/register', methods=['POST'])
 def register_user():
-    """Endpoint per registrare un nuovo utente (= insertUser)"""
+    """Endpoint to register a new user (= insertUser)"""
     data = request.json
     email = data.get('email')
     password = data.get('password')
 
     if not email or not password:
-        return jsonify({"error": "Email e password sono richiesti"}), 400
+        return jsonify({"error": "Email and password are required"}), 400
 
     if User.query.get(email):
-        return jsonify({"error": "L'email esiste già"}), 409
+        return jsonify({"error": "The email already exists"}), 409
 
     new_user = User(email=email, password=password)
     db.session.add(new_user)
@@ -136,34 +136,34 @@ def register_user():
 
 @app.route('/users/login', methods=['POST'])
 def login_user():
-    """Endpoint per il login"""
+    """Endpoint for login"""
     data = request.json
     email = data.get('email')
     password = data.get('password')
 
     user = User.query.get(email)
 
-    # Caso 1: L'utente non esiste nel database
+    # The user does not exist in the database
     if not user:
-        return jsonify({"error": "Utente non trovato"}), 404 # Utente non trovato
+        return jsonify({"error": "User not found"}), 404
 
-    # Caso 2: L'utente esiste, controlliamo la password
+    # The user exists, let's check the password
     if user.password == password:
-        return jsonify({"message": "Login avvenuto con successo", "user": user.to_dict()}), 200
+        return jsonify({"message": "Login successful", "user": user.to_dict()}), 200
     else:
-        # Caso 3: L'utente esiste ma la password è sbagliata
-        return jsonify({"error": "Credenziali non valide"}), 401 # Password errata
+        # The user exists but the password is incorrect
+        return jsonify({"error": "Credenziali non valide"}), 401
 
-# --- Gestione Tavoli ---
+# --- Table management ---
 @app.route('/users/<string:userId>/tables', methods=['GET'])
 def get_all_tables_by_user(userId):
-    """Endpoint per recuperare tutti i tavoli di un utente (= getAllTablesByUsers)"""
+    """Endpoint to retrieve all tables of a user (= getAllTablesByUsers)"""
     tables = Table.query.filter_by(id_user=userId).order_by(Table.name).all()
     return jsonify([table.to_dict() for table in tables]), 200
 
 @app.route('/users/<string:userId>/tables', methods=['POST'])
 def insert_table(userId):
-    """Endpoint per inserire un nuovo tavolo (= insertTable)."""
+    """Endpoint to insert a new table (= insertTable)"""
     data = request.json
     table_name = data.get('name')
     x_coordinate = data.get('x_coordinate')
@@ -172,15 +172,15 @@ def insert_table(userId):
     height = data.get('height')
 
     if not all([table_name, x_coordinate, y_coordinate, width, height]):
-        return jsonify({"error": "Dati del tavolo incompleti"}), 400
+        return jsonify({"error": "Incomplete table data"}), 400
 
-    # Verifica se l'utente esiste
+    # Check if the user exists
     if not User.query.get(userId):
-        return jsonify({"error": "Utente non trovato"}), 404
+        return jsonify({"error": "User not found"}), 404
 
-    # Controlla se il tavolo esiste già
+    # Check if the table already exists
     if Table.query.get((table_name, userId)):
-        return jsonify({"error": "Il tavolo esiste già per questo utente"}), 409
+        return jsonify({"error": "The table already exists for this user"}), 409
 
     new_table = Table(
         name=table_name,
@@ -196,10 +196,10 @@ def insert_table(userId):
 
 @app.route('/users/<string:userId>/tables/<string:name>', methods=['PUT'])
 def update_table(userId, name):
-    """Endpoint per aggiornare un tavolo esistente (= updateTable)."""
+    """Endpoint to update an existing table (= updateTable)"""
     table = Table.query.get((name, userId))
     if not table:
-        return jsonify({"error": "Tavolo non trovato"}), 404
+        return jsonify({"error": "Table not found"}), 404
 
     data = request.json
     table.x_coordinate = data.get('x_coordinate', table.x_coordinate)
@@ -212,25 +212,25 @@ def update_table(userId, name):
 
 @app.route('/users/<string:userId>/tables/<string:name>', methods=['DELETE'])
 def delete_table(userId, name):
-    """Endpoint per eliminare un tavolo (= deleteTableByNameAndUser)."""
+    """Endpoint to delete a table (= deleteTableByNameAndUser)"""
     table = Table.query.get((name, userId))
     if not table:
-        return jsonify({"error": "Tavolo non trovato"}), 404
+        return jsonify({"error": "Table not found"}), 404
 
     db.session.delete(table)
     db.session.commit()
-    return jsonify({"message": "Tavolo eliminato con successo"}), 200
+    return jsonify({"message": "Table successfully cleared"}), 200
 
-# --- Gestione Menu ---
+# --- Menu management ---
 @app.route('/users/<string:userId>/menu', methods=['GET'])
 def get_all_menu_by_user(userId):
-    """Endpoint per recuperare tutti gli elementi del menu di un utente (= getAllMenuByUser)."""
+    """Endpoint to retrieve all menu items for a user (= getAllMenuByUser)"""
     menu_items = MenuItem.query.filter_by(id_user=userId).order_by(MenuItem.name).all()
     return jsonify([item.to_dict() for item in menu_items]), 200
 
 @app.route('/users/<string:userId>/menu', methods=['POST'])
 def insert_menu_item(userId):
-    """Endpoint per inserire un elemento nel menu. Se esiste, lo sostituisce."""
+    """Endpoint to insert an item into the menu. If it exists, it replaces it"""
     data = request.json
     name = data.get('name')
     price = data.get('price')
@@ -238,24 +238,24 @@ def insert_menu_item(userId):
     description = data.get('description')
 
     if not all([name, price is not None, quantity is not None]):
-        return jsonify({"error": "Dati dell'elemento menu incompleti"}), 400
+        return jsonify({"error": "Incomplete menu item data"}), 400
 
-    # Verifica se l'utente esiste
+    # Check if the user exists
     if not User.query.get(userId):
-        return jsonify({"error": "Utente non trovato"}), 404
+        return jsonify({"error": "User not found"}), 404
 
-    # Cerca se l'elemento del menu esiste già
+    # Check if the menu item already exists
     existing_item = MenuItem.query.get((name, userId))
 
     if existing_item:
-        # Se l'elemento esiste, lo aggiorna con i nuovi dati
+        # Check if the item exists, update it with the new data if the item already exists
         existing_item.price = price
         existing_item.quantity = quantity
         existing_item.description = description
         db.session.commit()
-        return jsonify(existing_item.to_dict()), 200 # OK per aggiornamento
+        return jsonify(existing_item.to_dict()), 200
     else:
-        # Se non esiste, crea un nuovo elemento
+        # If it doesn't exist, create a new itemIf it doesn't exist, create a new item
         new_item = MenuItem(
             name=name,
             id_user=userId,
@@ -269,10 +269,10 @@ def insert_menu_item(userId):
 
 @app.route('/users/<string:userId>/menu/<string:name>', methods=['PUT'])
 def update_menu_item(userId, name):
-    """Endpoint per aggiornare un elemento del menu (= updateMenuItem)."""
+    """Endpoint to update a menu item (= updateMenuItem)"""
     menu_item = MenuItem.query.get((name, userId))
     if not menu_item:
-        return jsonify({"error": "Elemento del menu non trovato"}), 404
+        return jsonify({"error": "Menu item not found"}), 404
 
     data = request.json
     menu_item.price = data.get('price', menu_item.price)
@@ -284,25 +284,22 @@ def update_menu_item(userId, name):
 
 @app.route('/users/<string:userId>/menu/<string:name>', methods=['DELETE'])
 def delete_menu_item(userId, name):
-    """Endpoint per eliminare un elemento del menu (= deleteMenuItemByNameAndUser)."""
+    """Endpoint to delete a menu item (= deleteMenuItemByNameAndUser)."""
     menu_item = MenuItem.query.get((name, userId))
     if not menu_item:
-        return jsonify({"error": "Elemento del menu non trovato"}), 404
+        return jsonify({"error": "Menu item not found"}), 404
 
     db.session.delete(menu_item)
     db.session.commit()
-    return jsonify({"message": "Elemento del menu eliminato con successo"}), 200
+    return jsonify({"message": "Menu item successfully deleted"}), 200
 
-# --- Gestione ordini ---
+# --- Order management ---
 @app.route('/users/<string:userId>/orders', methods=['POST'])
 def insert_order_entries(userId):
-    """Endpoint per inserire o aggiornare voci d'ordine."""
+    """Endpoint to insert or update order items."""
     order_entries_data = request.json
     if not isinstance(order_entries_data, list):
-        return jsonify({"error": "Il corpo della richiesta deve essere una lista di ordini"}), 400
-    
-    # Non usiamo bulk_save_objects.
-    # L'aggiornamento/inserimento sarà gestito voce per voce.
+        return jsonify({"error": "The body of the request must be a list of orders"}), 400
     
     for entry_data in order_entries_data:
         table_name = entry_data.get('table_name')
@@ -310,21 +307,21 @@ def insert_order_entries(userId):
         quantity = entry_data.get('quantity')
         
         if not all([table_name, menu_item_name, quantity is not None]):
-            return jsonify({"error": "Dati dell'ordine incompleti"}), 400
+            return jsonify({"error": "Incomplete order data"}), 400
 
         if not Table.query.get((table_name, userId)):
-            return jsonify({"error": f"Tavolo '{table_name}' non trovato per l'utente '{userId}'"}), 404
+            return jsonify({"error": f"Table '{table_name}' not found for user '{userId}'"}), 404
         if not MenuItem.query.get((menu_item_name, userId)):
-            return jsonify({"error": f"Elemento menu '{menu_item_name}' non trovato per l'utente '{userId}'"}), 404
+            return jsonify({"error": f"Menu item '{menu_item_name}' not found for user '{userId}'"}), 404
 
-        # Cerca se esiste già un ordine per questo tavolo, piatto e utente
+        # Check if there is already an order for this table, dish and user
         existing_order = OrderEntry.query.get((table_name, menu_item_name, userId))
         
         if existing_order:
-            # Se l'ordine esiste, aggiorna la quantità
+            # If the order exists, update the quantity
             existing_order.quantity += quantity
         else:
-            # Se non esiste, crea un nuovo ordine
+            # If it does not exist, create a new order
             new_entry = OrderEntry(
                 table_name=table_name,
                 menu_item_name=menu_item_name,
@@ -333,18 +330,15 @@ def insert_order_entries(userId):
             )
             db.session.add(new_entry)
             
-    # Salva tutte le modifiche in un'unica transazione
     db.session.commit()
     
-    # Restituisce gli ordini aggiornati per quel tavolo per conferma
     updated_entries = OrderEntry.query.filter_by(id_user=userId, table_name=table_name).all()
     return jsonify([entry.to_dict() for entry in updated_entries]), 201
 
 if __name__ == '__main__':
-    # Creazione delle tabelle del database se non esistono
+    # Creating database tables if they do not exist
     with app.app_context():
         db.create_all()
     
-    # Esegue l'app in modalità debug. In produzione, usa un server WSGI.
     # host='0.0.0.0' accetta connessioni da qualsiasi dispositivo sulla rete
     app.run(host='0.0.0.0', debug=True, port=5000)

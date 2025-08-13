@@ -42,18 +42,18 @@ class TableArrangementViewModel(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Errore nel recupero dei tavoli: ${response.message()}"
+                        errorMessage = "Error retrieving tables: ${response.message()}"
                     )
                 }
             } catch (e: IOException) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Errore di connessione. Controlla la tua rete."
+                    errorMessage = "Connection error. Check your network.."
                 )
             } catch (e: HttpException) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Errore HTTP: ${e.code()}"
+                    errorMessage = "HTTP error: ${e.code()}"
                 )
             }
         }
@@ -87,13 +87,13 @@ class TableArrangementViewModel(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Errore nell'aggiunta del tavolo: ${response.message()}"
+                        errorMessage = "Error adding table: ${response.message()}"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Errore: ${e.message}"
+                    errorMessage = "Error: ${e.message}"
                 )
             }
         }
@@ -116,12 +116,12 @@ class TableArrangementViewModel(
                     loadTables()
                 } else {
                     _uiState.value = _uiState.value.copy(
-                        errorMessage = "Errore nell'aggiornamento del tavolo: ${response.message()}"
+                        errorMessage = "Error updating table: ${response.message()}"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Errore nell'aggiornamento: ${e.message}"
+                    errorMessage = "Error in update: ${e.message}"
                 )
             }
         }
@@ -137,12 +137,12 @@ class TableArrangementViewModel(
                     loadTables()
                 } else {
                     _uiState.value = _uiState.value.copy(
-                        errorMessage = "Errore nell'eliminazione del tavolo: ${response.message()}"
+                        errorMessage = "Error deleting table: ${response.message()}"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = "Errore nell'eliminazione: ${e.message}"
+                    errorMessage = "Error deleting table: ${e.message}"
                 )
             }
         }
