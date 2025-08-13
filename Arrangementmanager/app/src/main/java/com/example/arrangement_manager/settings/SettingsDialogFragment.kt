@@ -16,8 +16,20 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.example.arrangement_manager.R
 
+/**
+ * A DialogFragment for managing app settings.
+ *
+ * This fragment provides a user interface to control app permissions, specifically
+ * the notification permission on Android 13 (Tiramisu) and above.
+ */
 class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
 
+    /**
+     * An ActivityResultLauncher for requesting the POST_NOTIFICATIONS permission.
+     *
+     * The callback handles the result of the permission request. If granted, the switch is
+     * turned on. If denied, the switch is turned off.
+     */
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -30,6 +42,12 @@ class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
         }
     }
 
+    /**
+     * Called when the fragment is visible to the user and the dialog is displayed.
+     *
+     * Sets the width of the dialog to be 75% of the screen width for better display on
+     * various devices.
+     */
     override fun onStart() {
         super.onStart()
         dialog?.window?.let { window ->
@@ -45,6 +63,7 @@ class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
 
         val notificationSwitch = view.findViewById<Switch>(R.id.settings_switch)
 
+        // Set the initial state of the switch based on notification permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationSwitch.isChecked = hasNotificationPermission()
         } else {
@@ -52,6 +71,7 @@ class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
         }
 
         notificationSwitch.setOnCheckedChangeListener { _, isChecked ->
+            // If the user turns the switch on, request permission if needed
             if (isChecked) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     if (!hasNotificationPermission()) {
@@ -59,6 +79,8 @@ class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
                     }
                 }
             } else {
+                // If the user turns the switch off, open app settings for manual deactivation
+                // as the permission can't be revoked programmatically
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notificationSwitch.isChecked = true
                     openAppSettings()
@@ -67,6 +89,12 @@ class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
         }
     }
 
+    /**
+     * Checks if the app has the POST_NOTIFICATIONS permission.
+     *
+     * This method is only available on Android 13 (Tiramisu) and above.
+     * @return `true` if the permission is granted, `false` otherwise.
+     */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun hasNotificationPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -75,6 +103,12 @@ class SettingsDialogFragment : DialogFragment(R.layout.dialog_settings) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * Opens the app's settings screen.
+     *
+     * This allows the user to manually manage permissions, notifications, and other
+     * app-specific settings.
+     */
     private fun openAppSettings() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", requireContext().packageName, null)

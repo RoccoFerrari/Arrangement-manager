@@ -25,22 +25,37 @@ import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * ViewModel for the Kitchen screen.
+ *
+ * This ViewModel is responsible for managing the state of kitchen orders. It acts as a server,
+ * listening for incoming orders from client devices over a local Wi-Fi network using TCP sockets.
+ * It also uses Network Service Discovery (NSD) to broadcast its presence to clients.
+ *
+ * It provides a [LiveData] of orders to the UI and methods to manage these orders, such as
+ * adding, removing dishes, and marking an entire order as completed. When an order is completed,
+ * it sends a notification back to the original client device.
+ *
+ * @param application The application context.
+ */
 class KitchenViewModel(application: Application) : AndroidViewModel(application) {
 
+    // LiveData to hold the list of incoming orders. The UI observes this data
     private val _kitchenOrders = MutableLiveData<List<Order>>()
     val kitchenOrders: LiveData<List<Order>> = _kitchenOrders
 
-    // Communication via wi-fi
+    // --- Server Communication via Wi-Fi ---
+    // AtomicBoolean to track if the server is running, ensuring thread-safe state management
     private val isServerRunning = AtomicBoolean(false)
     private var serverJob: Job? = null
     private var serverSocket: ServerSocket? = null
     private val gson = GsonBuilder().create()
 
-    // Register the service for IP lookup
+    // --- Network Service Discovery (NSD) ---
     private var nsdManager: NsdManager? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
 
-    // Service IP
+    // Service details for NSD
     private val serviceName = "KitchenService"
     private val serviceType = "_http._tcp."
     private val serverPort = 6000
@@ -54,6 +69,12 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         registerService()
     }
 
+    /**
+     * Registers the ViewModel as a service on the local network using NSD.
+     *
+     * This allows clients (e.g., waiter's tablets) to discover the kitchen device's IP address
+     * and port to send orders.
+     */
     private fun registerService() {
         nsdManager = getApplication<Application>().getSystemService(Context.NSD_SERVICE) as NsdManager
         val serviceInfo = NsdServiceInfo().apply {
@@ -75,6 +96,12 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
     }
     
+    /**
+     * Starts a background server on a separate coroutine to listen for incoming client connections.
+     *
+     * The server will run indefinitely until the ViewModel is cleared. Each new client connection
+     * is handled in its own coroutine to allow for concurrent connections.
+     */
     private fun startListeningForOrders() {
         if (isServerRunning.compareAndSet(false, true)) {
             serverJob = viewModelScope.launch(Dispatchers.IO) {
@@ -105,6 +132,13 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
+    /**
+     * Handles an incoming client connection.
+     *
+     * This function reads JSON data from the socket, converts it into an [Order] object,
+     * and updates the list of orders to be displayed on the UI.
+     * @param clientSocket The socket for the client connection.
+     */
     private suspend fun handleClient(clientSocket: java.net.Socket) {
         withContext(Dispatchers.IO) {
             clientSocket.use { socket ->
@@ -132,19 +166,36 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // Shut down the server when it is no longer needed
+    /**
+     * Called when the ViewModel is no longer used and is being destroyed.
+     *
+     * This method ensures that the NSD service is unregistered and the server socket is properly
+     * shut down to prevent resource leaks.
+     */
     override fun onCleared() {
         super.onCleared()
         registrationListener?.let { nsdManager?.unregisterService(it) }
         stopListeningForOrders()
     }
 
+    /**
+     * Stops the server from listening for new connections.
+     *
+     * This is called when the ViewModel is cleared to gracefully shut down the server.
+     */
     private fun stopListeningForOrders() {
         Log.d("DEBUG_KITCHEN", "Attempting to shut down the server")
         isServerRunning.set(false)
         serverJob?.cancel()
     }
 
+    /**
+     * Adds a new order to the list of kitchen orders.
+     *
+     * If an order for the same table already exists, it merges the new dishes with the existing
+     * order. Otherwise, it adds the new order to the list. The list is then sorted by table number.
+     * @param order The new [Order] to be added or merged.
+     */
     private fun addOrder(order: Order) {
         val currentList = _kitchenOrders.value.orEmpty().toMutableList()
         // Check if an order for the same table is already present
@@ -165,6 +216,15 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         _kitchenOrders.value = currentList.sortedBy { it.tableId }
     }
 
+    /**
+     * Removes a single dish from an order.
+     *
+     * This function decrements the quantity of a specific dish within an order. If the quantity
+     * becomes zero, the dish is removed from the order. If the order becomes empty, it is removed
+     * from the list of orders.
+     * @param orderId The unique ID of the order.
+     * @param displayDishItem The dish to be removed or have its quantity reduced.
+     */
     fun removeDishFromOrder(orderId: String, displayDishItem: DisplayDishItem) {
         val currentList = _kitchenOrders.value.orEmpty().toMutableList()
         val orderToUpdate = currentList.find { it.orderId == orderId }
@@ -196,6 +256,13 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         _kitchenOrders.value = currentList
     }
 
+    /**
+     * Removes an entire order and sends a completion notification to the client.
+     *
+     * This function removes an order from the list and then calls [sendNotificationToClient]
+     * to inform the client that their order is ready.
+     * @param orderId The unique ID of the order to be removed.
+     */
     fun removeOrder(orderId: String) {
         val currentList = _kitchenOrders.value.orEmpty().toMutableList()
         val orderToRemove = currentList.find { it.orderId == orderId }
@@ -209,6 +276,15 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /**
+     * Sends a notification message to the client device.
+     *
+     * This method uses the stored IP address for a given table to connect to the client on a
+     * different port (6001) and send a message. The IP is removed from the map after the message
+     * is sent.
+     * @param tableId The ID of the table to send the notification to.
+     * @param message The message content to be sent.
+     */
     private fun sendNotificationToClient(tableId: String, message: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val clientIp = clientMap[tableId]

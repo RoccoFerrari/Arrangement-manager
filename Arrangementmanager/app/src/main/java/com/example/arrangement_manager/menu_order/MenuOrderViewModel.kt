@@ -32,6 +32,14 @@ import android.content.Context
 import android.net.nsd.NsdServiceInfo
 import java.net.InetSocketAddress
 
+/**
+ * ViewModel for the MenuOrderDialogFragment.
+ *
+ * This ViewModel handles all the business logic for the menu order dialog, including fetching
+ * menu items, managing the quantities of ordered items, calculating the total price,
+ * and sending the final order to the backend API and the kitchen via a local network socket.
+ * It also uses Network Service Discovery (NSD) to find the kitchen server's IP address.
+ */
 class MenuOrderViewModel (
     application: Application,
     private val userId: String
@@ -57,11 +65,12 @@ class MenuOrderViewModel (
     private val _totalPrice = MutableStateFlow(0.0)
     val totalPrice: StateFlow<Double> = _totalPrice.asStateFlow()
 
+    // Moshi and Retrofit setup for JSON serialization and API calls
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
     private val orderAdapter = moshi.adapter(Order::class.java)
     private val apiService = RetrofitClient.apiService
 
-    // Kitchen dynamic ip variables
+    // Network Service Discovery (NSD) for finding the kitchen server
     private var nsdManager: NsdManager? = null
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private val serviceType = "_http._tcp."
@@ -70,7 +79,10 @@ class MenuOrderViewModel (
     private val _kitchenIpAddress = MutableLiveData<String?>(null)
     private val kitchenIpAddress: LiveData<String?> = _kitchenIpAddress
 
-    // Called when ViewModel created
+    /**
+     * Called when the ViewModel is created.
+     * It initiates loading the menu items and starts the network service discovery.
+     */
     init {
         loadMenuItems()
         viewModelScope.launch {
@@ -81,6 +93,10 @@ class MenuOrderViewModel (
         startDiscovery()
     }
 
+    /**
+     * Fetches all menu items from the backend API for the current user.
+     * Updates the UI state with the result or an error message.
+     */
     private fun loadMenuItems() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -102,6 +118,11 @@ class MenuOrderViewModel (
         }
     }
 
+    /**
+     * Updates the quantity of a specific menu item in the order.
+     * @param menuItem The menu item to update.
+     * @param newQuantity The new quantity.
+     */
     fun onQuantityChanged(menuItem: MenuItem, newQuantity: Int) {
         val currentOrders = _orderedItems.value.toMutableMap()
         if (newQuantity > 0) {
@@ -113,6 +134,10 @@ class MenuOrderViewModel (
         _isConfirmButtonEnabled.value = currentOrders.isNotEmpty()
     }
 
+    /**
+     * Sends the final order to the backend API and then to the kitchen server via a socket.
+     * @param table The table for which the order is being placed.
+     */
     fun sendOrder(table: Table) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
@@ -200,6 +225,11 @@ class MenuOrderViewModel (
         }
     }
 
+    /**
+     * Updates the quantities of ordered menu items in the backend API.
+     *
+     * This is called after a successful order submission to the database.
+     */
     private fun updateMenuItemQuantities() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -246,6 +276,10 @@ class MenuOrderViewModel (
         }
     }
 
+    /**
+     * Calculates the total price of all ordered items.
+     * @param quantities A map of menu items to their ordered quantities.
+     */
     private fun calculateTotalPrice(quantities: Map<MenuItem, Int>) {
         var total = 0.0
         quantities.forEach { (menuItem, quantity) ->
@@ -254,7 +288,12 @@ class MenuOrderViewModel (
         _totalPrice.value = total
     }
 
-    // NSD: Network Service Discovery
+    // --- Network Service Discovery (NSD) methods ---
+
+    /**
+     * Starts discovering network services.
+     * Specifically, it looks for services of type "_http._tcp." to find the kitchen server.
+     */
     private fun startDiscovery() {
         nsdManager = getApplication<Application>().getSystemService(Context.NSD_SERVICE) as NsdManager
 
@@ -286,12 +325,22 @@ class MenuOrderViewModel (
 
         nsdManager?.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
     }
+
+    /**
+     * Stops the network service discovery.
+     */
     private fun stopDiscovery() {
         discoveryListener?.let { listener ->
             nsdManager?.stopServiceDiscovery(listener)
             discoveryListener = null
         }
     }
+
+    /**
+     * Called when the ViewModel is about to be destroyed.
+     *
+     * It ensures that network service discovery is stopped to prevent resource leaks.
+     */
     override fun onCleared() {
         super.onCleared()
         stopDiscovery()

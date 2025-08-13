@@ -340,5 +340,5 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     
-    # host='0.0.0.0' accetta connessioni da qualsiasi dispositivo sulla rete
+    # host='0.0.0.0' accept connections from any device on the network
     app.run(host='0.0.0.0', debug=True, port=5000)

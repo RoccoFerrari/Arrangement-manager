@@ -12,16 +12,36 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
+// This data class defines the UI state for the AddMenu screen.
+// It includes flags for loading, and messages for success or error
 data class AddMenuUiState(
     val isLoading: Boolean = false,
     val successMessage: String? = null,
     val errorMessage: String? = null
 )
 
+/**
+ * [ViewModel] for the `AddMenuDialogFragment`.
+ *
+ * This ViewModel handles the business logic for adding a new menu item. It manages
+ * the UI state, performs the network call to insert the item, and updates the state
+ * with success or error messages.
+ *
+ * @property userId The ID of the user for whom the menu item is being added.
+ */
 class AddMenuViewModel(private val userId: String) : ViewModel() {
     private val _uiState = MutableStateFlow(AddMenuUiState())
     val uiState: StateFlow<AddMenuUiState> = _uiState.asStateFlow()
 
+    /**
+     * Inserts a new menu item by making an API call.
+     *
+     * This method updates the UI state to show a loading indicator, and then attempts to
+     * insert the provided [MenuItem]. It handles network and HTTP exceptions, updating the
+     * UI state with appropriate success or error messages.
+     *
+     * @param menuItem The [MenuItem] object to be inserted.
+     */
     fun insertMenuItem(menuItem: MenuItem) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)

@@ -11,8 +11,16 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.arrangement_manager.R
 
+
+/**
+ * A fragment that allows the user to select the application mode (Orders or Kitchen).
+ *
+ * This fragment provides a simple UI with buttons to navigate to different sections of the app,
+ * such as the table arrangement view for managing orders, the kitchen view, and the settings dialog.
+ */
 class SelectionMode : Fragment() {
 
+    // NavArgs to retrieve arguments passed to the fragment
     private val args: SelectionModeArgs by navArgs()
 
     override fun onCreateView(
@@ -25,11 +33,14 @@ class SelectionMode : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Get references to UI elements from the layout
         val navController = findNavController()
         val ordersButton = view.findViewById<Button>(R.id.selection_mode_orders_button)
         val kitchenButton = view.findViewById<Button>(R.id.selection_mode_kitchen_button)
         val settingsButton = view.findViewById<ImageButton>(R.id.settings_button)
 
+        // Set up click listeners for the buttons.
+        // Orders button listener
         ordersButton.setOnClickListener {
             // Retrieve the email passed from the previous fragment
             val userEmail = args.userEmail
@@ -39,10 +50,12 @@ class SelectionMode : Fragment() {
             navController.navigate(action)
         }
 
+        // Kitchen button listener
         kitchenButton.setOnClickListener {
             navController.navigate(R.id.action_selectionMode_to_kitchenActivity)
         }
 
+        // Settings button listener
         settingsButton.setOnClickListener {
             navController.navigate(R.id.action_selectionMode_to_settingsDialogFragment)
         }

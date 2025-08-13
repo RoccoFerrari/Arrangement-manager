@@ -8,14 +8,27 @@ import androidx.fragment.app.DialogFragment
 import com.example.arrangement_manager.databinding.DialogDishDescriptionBinding
 import androidx.navigation.fragment.navArgs
 
+/**
+ * A DialogFragment that displays the name and description of a menu item.
+ *
+ * It retrieves the dish information from the navigation arguments and sets up the
+ * UI to show the details to the user.
+ */
 class DishDescriptionDialogFragment : DialogFragment() {
 
+    // View binding for the dialog layout
     private var _binding: DialogDishDescriptionBinding? = null
     private val binding get() = _binding!!
 
     // Retrieves the arguments passed to the Fragment
     private val args: DishDescriptionDialogFragmentArgs by navArgs()
 
+    /**
+     * Called when the fragment is visible to the user and the dialog is displayed.
+     *
+     * This method sets the dialog's width to 75% of the screen width for a better
+     * visual presentation.
+     */
     override fun onStart() {
         super.onStart()
 

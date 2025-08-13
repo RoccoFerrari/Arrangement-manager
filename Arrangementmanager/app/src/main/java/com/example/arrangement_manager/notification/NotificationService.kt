@@ -29,17 +29,38 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 
+/**
+ * A foreground service that listens for incoming messages on a specific port
+ * and displays notifications with a vibration effect.
+ *
+ * This service runs in the background to ensure it is not killed by the system,
+ * allowing it to continuously monitor for new order notifications from the backend.
+ */
 class NotificationService : Service() {
+    // The port number on which the service listens for incoming connections
     private val notificationPort = 6001
+
+    // A coroutine job that can be cancelled
     private var serviceJob = SupervisorJob()
+
+    // The coroutine scope for the service, using the IO dispatcher
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
-    // Constants for foreground service notification
+    /**
+     * Companion object to hold constants related to the foreground service notification.
+     */
     companion object {
         const val FOREGROUND_CHANNEL_ID = "ForegroundServiceChannel"
         const val FOREGROUND_NOTIFICATION_ID = 101
     }
 
+    /**
+     * Called when the service is started.
+     *
+     * This method creates a notification channel, starts the service in the foreground,
+     * and begins listening for connections.
+     * @return START_STICKY to indicate the system should try to re-create the service if it's killed.
+     */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
         val notification = createForegroundNotification()
@@ -51,10 +72,20 @@ class NotificationService : Service() {
         return START_STICKY
     }
 
+    /**
+     * Called when a client binds to the service.
+     *
+     * This service is not designed to be bound to, so this method returns null.
+     */
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
+    /**
+     * Creates a notification channel for Android O and above.
+     *
+     * This is required for displaying notifications on newer Android versions.
+     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
@@ -67,6 +98,12 @@ class NotificationService : Service() {
         }
     }
 
+    /**
+     * Creates the notification that will be used for the foreground service.
+     *
+     * This notification is visible to the user and informs them that a background service is running.
+     * @return The created [Notification] object.
+     */
     private fun createForegroundNotification(): Notification {
         return NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID)
             .setContentTitle("Active Order Manager")
@@ -76,6 +113,12 @@ class NotificationService : Service() {
             .build()
     }
 
+    /**
+     * Starts a coroutine to listen for incoming TCP connections.
+     *
+     * This function runs a server socket on the specified port. When a connection is accepted,
+     * it spawns a new coroutine to handle the client communication and receive the notification message.
+     */
     private fun startListening() {
         serviceScope.launch {
             try {
@@ -100,6 +143,13 @@ class NotificationService : Service() {
         }
     }
 
+    /**
+     * Handles a single client connection.
+     *
+     * It reads a message from the client socket, displays a notification with the message,
+     * and then closes the socket.
+     * @param clientSocket The [Socket] representing the client connection.
+     */
     private fun handleClientNotification(clientSocket: Socket) {
         val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
         val message = reader.readLine()
@@ -111,6 +161,13 @@ class NotificationService : Service() {
         clientSocket.close()
     }
 
+    /**
+     * Displays a high-priority notification to the user.
+     *
+     * This method also checks for the POST_NOTIFICATIONS permission on newer Android versions
+     * and triggers a vibration effect.
+     * @param message The text to be displayed in the notification.
+     */
     fun showOrderReadyNotification(message: String) {
         val context = applicationContext
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -135,6 +192,11 @@ class NotificationService : Service() {
         vibrateDevice()
     }
 
+    /**
+     * Triggers a one-shot vibration on the device.
+     *
+     * It handles different Android versions to ensure compatibility.
+     */
     private fun vibrateDevice() {
         val context = applicationContext
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

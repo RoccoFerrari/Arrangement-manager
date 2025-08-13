@@ -17,7 +17,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 
+/**
+ * A DialogFragment for managing and confirming orders for a specific table.
+ *
+ * This fragment displays a list of menu items, allows the user to adjust the quantity
+ * for each item, shows the total price, and sends the order to the backend.
+ */
 class MenuOrderDialogFragment : DialogFragment() {
+    // NavArgs to retrieve arguments passed to the fragment, such as the user's email and the table
     private val args: MenuOrderDialogFragmentArgs by navArgs()
 
     private var _binding: DialogOrderMenuBinding? = null
@@ -25,10 +32,15 @@ class MenuOrderDialogFragment : DialogFragment() {
 
     private lateinit var menuAdapter: MenuOrderAdapter
 
+    // ViewModel for this fragment, initialized with the user's email
     private val viewModel: MenuOrderViewModel by viewModels {
         MenuOrderViewModelFactory(requireActivity().application, args.userEmail)
     }
 
+    /**
+     * Called to have the fragment instantiate its user interface view.
+     * Inflates the dialog layout using view binding.
+     */
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -61,11 +73,15 @@ class MenuOrderDialogFragment : DialogFragment() {
         setupRecyclerView()
         observeViewModel()
 
+        // Set up the click listener for the confirm order button
         binding.buttonConfirmOrder.setOnClickListener {
             viewModel.sendOrder(args.table)
         }
     }
 
+    /**
+     * Initializes and configures the RecyclerView for displaying menu items.
+     */
     private fun setupRecyclerView() {
         menuAdapter = MenuOrderAdapter(
             menuItems = emptyList(),
@@ -84,6 +100,10 @@ class MenuOrderDialogFragment : DialogFragment() {
         }
     }
 
+    /**
+     * Opens a dialog to display the description of a menu item.
+     * @param menuItem The [MenuItem] whose description will be shown.
+     */
     private fun openDishDescriptionDialog(menuItem: MenuItem) {
         val dishDescription = if (menuItem.description.isEmpty()) {
             "No description"
@@ -98,6 +118,12 @@ class MenuOrderDialogFragment : DialogFragment() {
         findNavController().navigate(action)
     }
 
+    /**
+     * Sets up observers for the ViewModel's LiveData and Flow.
+     *
+     * It observes changes in the list of menu items, ordered quantities, loading state,
+     * error messages, order confirmation, and total price to update the UI accordingly.
+     */
     private fun observeViewModel() {
         // Observe at the list of menu items
         viewLifecycleOwner.lifecycleScope.launch {

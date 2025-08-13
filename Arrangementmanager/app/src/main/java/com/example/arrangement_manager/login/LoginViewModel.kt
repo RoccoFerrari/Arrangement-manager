@@ -15,10 +15,29 @@ import com.example.arrangement_manager.retrofit.User
 import retrofit2.HttpException
 import java.io.IOException
 
+/**
+ * ViewModel responsible for user login and registration logic.
+ *
+ * This ViewModel handles all network calls to authenticate users and manage their session state.
+ * It exposes a [StateFlow] to the UI to provide real-time updates on the login process,
+ * including loading state, error messages, and successful login status.
+ *
+ * @param application The application context.
+ */
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
+    // StateFlow to hold the user session state, including loading, error, and login status
     private val _userSessionState = MutableStateFlow(UserSession())
     val userSessionState: StateFlow<UserSession> = _userSessionState.asStateFlow()
 
+    /**
+     * Attempts to log in or register a user with the provided email and password.
+     *
+     * First, it tries to log in. If the user is not found (404 error), it attempts to register the user.
+     * It handles various network and server errors and updates the UI state accordingly.
+     *
+     * @param email The user's email address.
+     * @param password The user's password.
+     */
     fun loginOrRegister(email: String, password: String) {
         viewModelScope.launch(Dispatchers.IO) {
             // Reset state at the start of each attempt
@@ -91,6 +110,14 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Attempts to register a new user with the provided details.
+     *
+     * This method is typically called after a login attempt fails with a 404 (Not Found) error.
+     * It handles successful registration and potential errors like a duplicate email (409).
+     *
+     * @param user The [User] object containing the email and password for registration.
+     */
     private fun tryRegisterUser(user: User) {
         viewModelScope.launch(Dispatchers.IO) {
             _userSessionState.value = _userSessionState.value.copy(isLoading = true, errorMessage = null)

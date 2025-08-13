@@ -23,14 +23,25 @@ data class Order(
     val dishes: List<DishItem>
 )
 
+/**
+ * A [Fragment] that displays a list of incoming orders for the kitchen staff.
+ *
+ * This fragment acts as the UI component for the kitchen server, observing the
+ * [KitchenViewModel]'s LiveData to display real-time order updates. It provides functionality
+ * for kitchen staff to manage orders, such as marking individual dishes or entire orders as ready.
+ */
 class KitchenFragment : Fragment() {
 
+    // View binding for the fragment's layout
     private var _binding: FragmentOrderKitchenBinding? = null
     private val binding get() = _binding!!
 
+    // Initializes the ViewModel using a custom factory to provide the application context
     private val viewModel: KitchenViewModel by viewModels {
         KitchenViewModelFactory(requireActivity().application)
     }
+
+    // Adapter for the RecyclerView to display the list of orders
     private lateinit var adapter: KitchenOrderAdapter
 
     override fun onCreateView(
@@ -48,6 +59,12 @@ class KitchenFragment : Fragment() {
         observeViewModel()
     }
 
+    /**
+     * Configures the RecyclerView for displaying kitchen orders.
+     *
+     * This method initializes the [LinearLayoutManager] and the [KitchenOrderAdapter], setting up
+     * click listeners for when a dish or an entire order is marked as ready.
+     */
     private fun setupRecyclerView() {
         binding.rvKitchenOrders.layoutManager = LinearLayoutManager(requireContext())
 
@@ -64,6 +81,12 @@ class KitchenFragment : Fragment() {
         binding.rvKitchenOrders.adapter = adapter
     }
 
+    /**
+     * Observes the [KitchenViewModel]'s [kitchenOrders] LiveData.
+     *
+     * When the list of orders changes, this method updates the adapter to reflect the new data
+     * and shows/hides a "No orders" message based on whether the list is empty.
+     */
     private fun observeViewModel() {
         // View LiveData using viewLifecycleOwner
         viewModel.kitchenOrders.observe(viewLifecycleOwner) { orders ->

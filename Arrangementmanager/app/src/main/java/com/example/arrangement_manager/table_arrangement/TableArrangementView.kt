@@ -15,16 +15,38 @@ import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withMatrix
 import com.example.arrangement_manager.retrofit.Table
 
-// Callback interfaces to communicate changes to a table
+/**
+ * Callback interface to notify when a table is updated.
+ */
 interface OnTableUpdatedListener {
+    /**
+     * Called when a table is moved or resized.
+     * @param table The [Table] object with the updated data.
+     */
     fun onTableUpdated(table: Table)
 }
 
+/**
+ * Callback interface to notify when a table is clicked.
+ */
 interface OnTableClickedListener {
+    /**
+     * Called when a single tap occurs on a table.
+     * @param table The [Table] object that was clicked.
+     */
     fun onTableClicked(table: Table)
 }
 
-
+/**
+ * A custom view for displaying and interacting with a list of tables.
+ *
+ * It allows users to view, drag, resize, zoom, and pan the table arrangement area.
+ * Interactions are handled based on an edit mode.
+ *
+ * @param context The context of the view.
+ * @param attrs The XML attribute set.
+ * @param defStyleAttr A default style attribute.
+ */
 class TableArrangementView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -88,16 +110,34 @@ class TableArrangementView @JvmOverloads constructor(
 
     // Zoom handler
     private val scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        /**
+         * Called at the start of a scaling gesture.
+         * Sets the scaling state.
+         * @param detector The scale gesture detector.
+         * @return `true` to continue handling the event, `false` otherwise.
+         */
         override fun onScaleBegin(detector: ScaleGestureDetector) : Boolean {
             isScaling = true
             mode = Mode.NONE
             return true
         }
+
+        /**
+         * Called at the end of a scaling gesture.
+         * Resets the scaling state.
+         * @param detector The scale gesture detector.
+         */
         override fun onScaleEnd(detector: ScaleGestureDetector) {
             super.onScaleEnd(detector)
             isScaling = false
         }
 
+        /**
+         * Called during a scaling gesture.
+         * Applies the scale factor to the transformation matrix.
+         * @param detector The scale gesture detector.
+         * @return `true` to continue handling the event, `false` otherwise.
+         */
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             val scaleFactor = detector.scaleFactor
             // scaleFactor = 1 + (scaleFactor - 1) * 0.5f
@@ -112,6 +152,16 @@ class TableArrangementView @JvmOverloads constructor(
 
     // Pan and click handler
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+
+        /**
+         * Called during a scrolling gesture.
+         * Translates the transformation matrix to simulate panning.
+         * @param e1 The initial touch event.
+         * @param e2 The current touch event.
+         * @param distanceX The distance scrolled on the X axis.
+         * @param distanceY The distance scrolled on the Y axis.
+         * @return `true` if the event was consumed, `false` otherwise.
+         */
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             if(!isScaling && !isEditMode) {
                 matrix.postTranslate(-distanceX, -distanceY)
@@ -121,6 +171,13 @@ class TableArrangementView @JvmOverloads constructor(
             return false
         }
 
+        /**
+         * Called when a single tap occurs.
+         * Selects a table if the tap is on it, otherwise deselects it.
+         * If not in edit mode, it invokes the click listener.
+         * @param e The touch event.
+         * @return `true` if the event was consumed, `false` otherwise.
+         */
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             // Calculate the inverse matrix to convert the touch coordinates
             matrix.invert(inverseMatrix)
@@ -154,7 +211,13 @@ class TableArrangementView @JvmOverloads constructor(
     // Methods to update the View
     // ----------------------------------------
 
-    // Method to update the table list
+    /**
+     * Sets the list of tables to be drawn.
+     *
+     * Updates the internal list of tables and invalidates the view to force a redraw.
+     * If edit mode is active, it tries to maintain the selection of the previous table.
+     * @param newTables The new list of [Table] objects.
+     */
     fun setTables(newTables: List<Table>) {
         this.tables = newTables
         if(isEditMode)
@@ -165,6 +228,13 @@ class TableArrangementView @JvmOverloads constructor(
         invalidate()
     }
 
+    /**
+     * Enables or disables edit mode.
+     *
+     * In edit mode, users can drag and resize tables.
+     * When disabled, the current selection is cleared.
+     * @param enable `true` to enable the mode, `false` to disable it.
+     */
     fun setEditMode(enable: Boolean) {
         isEditMode = enable
         if(!enable) {
@@ -173,16 +243,29 @@ class TableArrangementView @JvmOverloads constructor(
         invalidate()
     }
 
+    /**
+     * Clears the selection of the currently selected table.
+     */
     fun clearSelection() {
         selectedTable = null
         invalidate()
     }
 
+    /**
+     * Returns the currently selected [Table] object.
+     * @return The selected [Table] object or `null` if no table is selected.
+     */
     fun getSelectedTable() : Table? {
         return selectedTable
     }
 
-    // method for drawing the view
+    /**
+     * The drawing method for the view.
+     *
+     * Applies zoom and pan transformations and draws each table. If a table is
+     * selected and edit mode is active, it also draws a border and a resize handle.
+     * @param canvas The canvas to draw on.
+     */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
@@ -213,7 +296,13 @@ class TableArrangementView @JvmOverloads constructor(
         }
     }
 
-    // Touch event management
+    /**
+     * Handles touch events on the view.
+     *
+     * Manages zoom, pan, drag, and resize gestures based on the current mode.
+     * @param event The touch event received.
+     * @return `true` if the event was consumed, `false` otherwise.
+     */
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         scaleGestureDetector.onTouchEvent(event!!)
 
@@ -300,6 +389,14 @@ class TableArrangementView @JvmOverloads constructor(
         return false
     }
 
+    /**
+     * Finds the table located at a given position on the screen.
+     *
+     * The check is performed in reverse order to find the topmost table (drawn last).
+     * @param x The X coordinate of the point.
+     * @param y The Y coordinate of the point.
+     * @return The [Table] object at that position or `null` if none is found.
+     */
     private fun findTableAtPosition(x: Float, y: Float): Table? {
         for(i in tables.indices.reversed()) {
             val table = tables[i]
@@ -311,6 +408,14 @@ class TableArrangementView @JvmOverloads constructor(
         return null
     }
 
+    /**
+     * Checks if a given position is near the table's resize handle.
+     *
+     * @param table The [Table] object to check.
+     * @param x The X coordinate of the point.
+     * @param y The Y coordinate of the point.
+     * @return `true` if the point is near the resize handle, `false` otherwise.
+     */
     private fun isNearResizeHandle(table: Table, x: Float, y: Float): Boolean {
         val hitArea = RectF(
             table.xCoordinate + table.width - handleRadius,

@@ -14,11 +14,21 @@ import com.example.arrangement_manager.retrofit.MenuItem
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+/**
+ * A [DialogFragment] for adding a new menu item.
+ *
+ * This fragment provides a dialog interface for the user to input details of a new menu item
+ * and save it. It uses a [AddMenuViewModel] to handle the business logic and state.
+ */
 class AddMenuDialogFragment : DialogFragment() {
+    // View binding for the dialog's layout
     private var _binding: DialogAddMenuBinding? = null
     private val binding get() = _binding!!
+
+    // Retrieves navigation arguments, specifically the user's email
     private val args: AddMenuDialogFragmentArgs by navArgs()
 
+    // Initializes the ViewModel with the user's email from navigation arguments
     private val viewModel: AddMenuViewModel by viewModels {
         AddMenuViewModelFactory(args.userEmail)
     }
@@ -50,11 +60,11 @@ class AddMenuDialogFragment : DialogFragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collectLatest { uiState ->
-                // Caricamento
+                // Loading state
                 binding.buttonAddItem.isEnabled = !uiState.isLoading
                 binding.buttonSaveMenu.isEnabled = !uiState.isLoading
 
-                // Messaggi di successo/errore
+                // Success/error messages
                 if (uiState.errorMessage != null) {
                     Toast.makeText(requireContext(), uiState.errorMessage, Toast.LENGTH_SHORT).show()
                 }
@@ -73,6 +83,13 @@ class AddMenuDialogFragment : DialogFragment() {
         }
     }
 
+    /**
+     * Gathers data from the input fields and adds a new menu item to the ViewModel.
+     *
+     * This method validates the input, creates a new [MenuItem] object, and then
+     * calls the ViewModel to insert it. It also clears the input fields after a successful
+     * insertion.
+     */
     private fun addItem() {
         val name = binding.editTextName.text.toString().trim()
         val priceStr = binding.editTextPrice.text.toString().trim()

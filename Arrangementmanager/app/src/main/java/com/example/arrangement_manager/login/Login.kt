@@ -15,14 +15,24 @@ import com.example.arrangement_manager.R
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+/**
+ * A [Fragment] for user login and registration.
+ *
+ * This fragment provides a UI for users to enter their email and password,
+ * and handles the login/registration process by interacting with the [LoginViewModel].
+ * It also observes the ViewModel's state to update the UI, show error messages,
+ * and navigate to the next screen upon successful login.
+ */
 class Login : Fragment() {
 
+    // Instantiates the ViewModel using a custom factory
     private val viewModel: LoginViewModel by viewModels {
         LoginViewModelFactory(
             requireActivity().application
         )
     }
 
+    // References to UI components
     private lateinit var emailInstance: EditText
 
     private lateinit var passwordInstance: EditText
@@ -39,6 +49,7 @@ class Login : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Initialize UI components using their IDs from the layout
         emailInstance = view.findViewById(R.id.login_email)
         passwordInstance = view.findViewById(R.id.login_password)
         nextButton = view.findViewById(R.id.login_next)
@@ -46,6 +57,7 @@ class Login : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.userSessionState.collectLatest { state ->
+                // Enable/disable the button based on the loading state
                 if (state.isLoading) {
                     // Button disabled during login
                     nextButton.isEnabled = false
@@ -58,6 +70,7 @@ class Login : Fragment() {
                     Toast.makeText(requireContext(), state.errorMessage, Toast.LENGTH_LONG).show()
                 }
 
+                // Navigate to the next screen upon successful login
                 if (state.isLoggedIn) {
                     Toast.makeText(requireContext(), "Login successful for ${state.email}!", Toast.LENGTH_SHORT).show()
                     val action = LoginDirections.actionLoginToSelectionMode(state.email!!)
@@ -66,6 +79,7 @@ class Login : Fragment() {
             }
         }
 
+        // Set up the click listener for the "Next" button
         nextButton.setOnClickListener {
             val email = emailInstance.text.toString().trim()
             val password = passwordInstance.text.toString().trim()
@@ -80,6 +94,7 @@ class Login : Fragment() {
                 return@setOnClickListener
             }
 
+            // Call the ViewModel's login method
             viewModel.loginOrRegister(email, password)
         }
     }

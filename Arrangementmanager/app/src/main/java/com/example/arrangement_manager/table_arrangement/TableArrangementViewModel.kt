@@ -19,6 +19,14 @@ data class TableUiState(
     val errorMessage: String? = null
 )
 
+/**
+ * ViewModel for managing the table arrangement screen.
+ *
+ * It handles the business logic for fetching, adding, updating, and deleting tables
+ * associated with a specific user, and exposes the UI state to be observed by the UI layer.
+ *
+ * @param userEmail The email of the user whose tables are being managed.
+ */
 class TableArrangementViewModel(
     private val userEmail: String
 ) : ViewModel()  {
@@ -31,6 +39,12 @@ class TableArrangementViewModel(
         loadTables()
     }
 
+    /**
+     * Loads the list of tables for the current user.
+     *
+     * This function initiates a network request to fetch all tables associated with the user's email.
+     * It updates the UI state with the fetched data, or with an error message in case of failure.
+     */
     private fun loadTables() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
@@ -59,7 +73,13 @@ class TableArrangementViewModel(
         }
     }
 
-    // Method to add a new table
+    /**
+     * Adds a new table for the current user.
+     *
+     * The function automatically generates a unique name for the new table
+     * (e.g., "Table 1", "Table 2", etc.) and calculates its initial position.
+     * After successfully adding the table via a network call, it reloads the entire list of tables.
+     */
     fun addTable() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
@@ -99,7 +119,14 @@ class TableArrangementViewModel(
         }
     }
 
-    // Method to update an existing table
+    /**
+     * Updates an existing table.
+     *
+     * This method sends the updated table data to the server and, upon success,
+     * reloads the entire table list to reflect the changes in the UI.
+     *
+     * @param table The `Table` object containing the updated data.
+     */
     fun updateTable(table: Table) {
         viewModelScope.launch {
             try {
@@ -127,7 +154,14 @@ class TableArrangementViewModel(
         }
     }
 
-    // Method to delete a table
+    /**
+     * Deletes a specific table from the list.
+     *
+     * It sends a request to the server to delete the table and, if successful,
+     * reloads the table list to update the UI.
+     *
+     * @param table The `Table` object to be deleted.
+     */
     fun deleteTable(table: Table) {
         viewModelScope.launch {
             try {
