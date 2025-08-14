@@ -274,11 +274,12 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
         val orderToRemove = currentList.find { it.orderId == orderId }
         if(orderToRemove != null) {
             val tableId = orderToRemove.tableId
+            val tableNumber = tableId.split("::Table ").last()
             currentList.remove(orderToRemove)
             _kitchenOrders.value = currentList
 
             Log.d("DEBUG_KITCHEN", "Attempt to send notification for table $tableId.")
-            sendNotificationToClient(tableId, "Order of the table $tableId completed")
+            sendNotificationToClient(tableId, "Order of the table $tableNumber completed")
         }
     }
 
