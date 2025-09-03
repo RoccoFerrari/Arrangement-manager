@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="16dp">
 
     <TextView
         android:id="@+id/textView_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Add products"
+        android:text="Modify item"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -27,8 +27,7 @@
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editText_name"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Product name" />
+            android:layout_height="wrap_content" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
@@ -51,7 +50,6 @@
                 android:id="@+id/editText_price"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Price"
                 android:inputType="numberDecimal" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -65,7 +63,6 @@
                 android:id="@+id/editText_quantity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Quantity"
                 android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
@@ -82,8 +79,7 @@
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editText_description"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Description (optional)" />
+            android:layout_height="wrap_content" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
@@ -92,22 +88,10 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:backgroundTint="#ff6750a4"
-        android:text="Add item"
+        android:text="Confirm edit"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textInputLayout_description" />
-
-    <Button
-        android:id="@+id/button_save_menu"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="#ff6750a4"
-        android:text="Save menu"
-        android:textColor="@color/white"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_confirm_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

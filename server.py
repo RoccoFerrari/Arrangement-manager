@@ -275,6 +275,7 @@ def update_menu_item(userId, name):
         return jsonify({"error": "Menu item not found"}), 404
 
     data = request.json
+    menu_item.name = data.get('name', menu_item.name)
     menu_item.price = data.get('price', menu_item.price)
     menu_item.quantity = data.get('quantity', menu_item.quantity)
     menu_item.description = data.get('description', menu_item.description)
@@ -282,10 +283,21 @@ def update_menu_item(userId, name):
     db.session.commit()
     return jsonify(menu_item.to_dict()), 200
 
+@app.route('/users/<string:userId>/menu/<string:name>', methods=['DELETE'])
+def delete_menu_item(userId, name):
+    """Endpoint to delete a menu item"""
+    menu_item = MenuItem.query.get((name, userId))
+    if not menu_item:
+        return jsonify({"error": "Item not found"}), 404
+
+    db.session.delete(menu_item)
+    db.session.commit()
+    return jsonify({"message": "Item successfully deleted"}), 200
+
 # --- Order management ---
 @app.route('/users/<string:userId>/orders', methods=['POST'])
 def insert_order_entries(userId):
-    """Endpoint to insert or update order items."""
+    """Endpoint to insert or update order items"""
     order_entries_data = request.json
     if not isinstance(order_entries_data, list):
         return jsonify({"error": "The body of the request must be a list of orders"}), 400

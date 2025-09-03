@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.setFragmentResult
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -68,6 +70,15 @@ class MenuOrderDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setFragmentResultListener("menu_update_request_key") { key, bundle ->
+            val isUpdateSuccessful = bundle.getBoolean("update_success")
+            if(isUpdateSuccessful) {
+                viewModel.getMenu()
+            } else {
+                Toast.makeText(requireContext(), "Menu update failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         binding.textViewTableNumber.text = (args.table.name)
 
         setupRecyclerView()
@@ -89,7 +100,7 @@ class MenuOrderDialogFragment : DialogFragment() {
             onQuantityChanged = { menuItem, quantity ->
                 viewModel.onQuantityChanged(menuItem, quantity)
             },
-            // Passa la lambda per gestire il click sul nome del piatto
+            // Lambda to handle the click event on a menu item
             onDishNameClicked = { menuItem ->
                 openDishDescriptionDialog(menuItem)
             }
@@ -113,7 +124,10 @@ class MenuOrderDialogFragment : DialogFragment() {
         val action = MenuOrderDialogFragmentDirections
             .actionMenuOrderDialogFragmentToDishDescriptionDialogFragment(
                 dishName = menuItem.name,
-                dishDescription = dishDescription
+                dishDescription = dishDescription,
+                dishPrice = menuItem.price.toString(),
+                dishQuantity = menuItem.quantity.toString(),
+                userEmail = args.userEmail
             )
         findNavController().navigate(action)
     }

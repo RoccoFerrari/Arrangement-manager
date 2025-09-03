@@ -12,8 +12,13 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
-// This data class defines the UI state for the AddMenu screen.
-// It includes flags for loading, and messages for success or error
+/**
+ * UI state for the AddMenuViewModel.
+ * This includes loading state, success message, and error message.
+ * @property isLoading Indicates whether the UI is currently loading data.
+ * @property successMessage A message indicating a successful operation.
+ * @property errorMessage A message indicating an error.
+ */
 data class AddMenuUiState(
     val isLoading: Boolean = false,
     val successMessage: String? = null,

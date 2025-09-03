@@ -109,6 +109,15 @@ interface ArrangementManagerApiService {
         @Path("name") menuName: String,
         @Body menuItemUpdate: MenuItemUpdate
     ): Response<MenuItem>
+
+    /**
+     * Deletes a menu item for a user.
+     * @param userId The ID of the user.
+     * @param menuName The name of the menu item to delete.
+     * @return A Retrofit [Response] with a [Void] body on success.
+     */
+    @DELETE("users/{userId}/menu/{name}")
+    suspend fun deleteMenuItem(@Path("userId") userId: String, @Path("name") menuName: String): Response<Void>
     
 
     // --- Orders ---

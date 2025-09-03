@@ -99,6 +99,7 @@ data class MenuItem(
  */
 @JsonClass(generateAdapter = true)
 data class MenuItemUpdate(
+    val name: String? = null,
     val price: Float? = null,
     val quantity: Int? = null,
     val description: String? = null

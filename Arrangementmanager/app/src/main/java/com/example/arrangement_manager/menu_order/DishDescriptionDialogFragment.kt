@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
+import androidx.navigation.fragment.findNavController
 import com.example.arrangement_manager.databinding.DialogDishDescriptionBinding
 import androidx.navigation.fragment.navArgs
 
@@ -57,6 +58,16 @@ class DishDescriptionDialogFragment : DialogFragment() {
         // Set the description text
         binding.textViewDialogTitle.text = args.dishName
         binding.textViewDialogDescription.text = args.dishDescription
+
+        binding.buttonDialogModify.setOnClickListener {
+            val action = DishDescriptionDialogFragmentDirections.actionDishDescriptionDialogFragmentToModifyDishDialogFragment(
+                args.dishName,
+                args.dishPrice,
+                args.dishQuantity,
+                args.dishDescription,
+                args.userEmail)
+            findNavController().navigate(action)
+        }
 
         // Closes the dialog when the button is clicked
         binding.buttonDialogClose.setOnClickListener {

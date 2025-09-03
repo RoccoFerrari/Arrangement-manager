@@ -93,6 +93,10 @@ class MenuOrderViewModel (
         startDiscovery()
     }
 
+    fun getMenu() {
+        loadMenuItems()
+    }
+
     /**
      * Fetches all menu items from the backend API for the current user.
      * Updates the UI state with the result or an error message.

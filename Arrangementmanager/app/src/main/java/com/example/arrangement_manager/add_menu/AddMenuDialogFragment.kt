@@ -61,7 +61,7 @@ class AddMenuDialogFragment : DialogFragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collectLatest { uiState ->
                 // Loading state
-                binding.buttonAddItem.isEnabled = !uiState.isLoading
+                binding.buttonConfirmItem.isEnabled = !uiState.isLoading
                 binding.buttonSaveMenu.isEnabled = !uiState.isLoading
 
                 // Success/error messages
@@ -74,7 +74,7 @@ class AddMenuDialogFragment : DialogFragment() {
             }
         }
 
-        binding.buttonAddItem.setOnClickListener {
+        binding.buttonConfirmItem.setOnClickListener {
             addItem()
         }
 
