@@ -4,6 +4,7 @@ A native Android application designed to streamline order management in a restau
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/RoccoFerrari/Arrangement-manager.svg)](https://github.com/RoccoFerrari/Arrangement-manager/stargazers)
+[Download the latest version](Arrangement-Manager.apk)
 
 ### Main features
 
