@@ -99,7 +99,7 @@ To modify the code or run the app via Android Studio, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone [https://github.com/RoccoFerrari/Arrangement-manager.git](https://github.com/RoccoFerrari/Arrangement-manager.git)
+    git clone https://github.com/RoccoFerrari/Arrangement-manager.git
     ```
 
 2. Open the project in **Android Studio**.
