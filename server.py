@@ -5,15 +5,25 @@ import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
-from sqlalchemy import ForeignKey, Column, String, Float, Integer
 
 app = Flask(__name__)
-
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Database configuration (SQLite)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'arrangement_manager.db')
+db_user = os.environ.get('DB_USER', 'user_locale')
+db_pass = os.environ.get('DB_PASS', 'pass_locale')
+db_host = os.environ.get('DB_HOST', 'localhost') # In docker will be 'db-service'
+db_name = os.environ.get('DB_NAME', 'arrangement_manager.db')
+
+# If in Docker -> PostgreSQL, else -> SQLite
+if os.environ.get('DOCKER_ENV'):
+    # URI for PostgreSQL
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_pass}@{db_host}/{db_name}'
+else:
+    # Database configuration (SQLite)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'arrangement_manager.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 
 db = SQLAlchemy(app)
 
@@ -93,15 +103,6 @@ class OrderEntry(db.Model):
             ondelete='CASCADE'
         ),
     )
-
-    def to_dict(self):
-        """Method to serialize the OrderEntry object into a dictionary"""
-        return {
-            'table_name': self.table_name,
-            'menu_item_name': self.menu_item_name,
-            'id_user': self.id_user,
-            'quantity': self.quantity
-        }
 
     def to_dict(self):
         """Method to serialize the OrderEntry object into a dictionary"""
@@ -337,9 +338,7 @@ def insert_order_entries(userId):
     return jsonify([entry.to_dict() for entry in updated_entries]), 201
 
 if __name__ == '__main__':
-    # Creating database tables if they do not exist
+
     with app.app_context():
         db.create_all()
-    
-    # host='0.0.0.0' accept connections from any device on the network
     app.run(host='0.0.0.0', debug=True, port=5000)
