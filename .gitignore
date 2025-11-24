@@ -8,3 +8,8 @@
 *.asv
 **/.obsidian/
 __pycache__/
+# .gitignore
+venv/
+.venv/
+env/
+*.pyc
