@@ -379,7 +379,22 @@ def handle_send_order(data):
     order_data = data['order']
 
     emit('receive:order', order_data, to=user_id)
-    print(f'Ordine inoltrato alla cucina del ristorante {user_id}')
+    print(f'Order forwarded to waiter {user_id}')
+
+@socketio.on('kitchen_status_update')
+def handle_status_update(data):
+    print(f"Update from Kitchen: {data['message']}")
+
+    user_id = data.get('userId')
+    message = data.get('message')
+
+    if not user_id:
+        print("ERROR: userId not found")
+        return
+    
+    print(f"Kitchen state received: {message} -> Forwarded to room: {user_id}")
+
+    emit('waiter_notification', data, to=user_id)
 
 if __name__ == '__main__':
 
