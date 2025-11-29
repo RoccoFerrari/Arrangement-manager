@@ -5,9 +5,18 @@ import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
+from flask_socketio import SocketIO, emit, join_room
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+# Secret key
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+# Init SocketIO allowing conns from anywhare
+socketio = SocketIO(app, cors_allowed_origins='*')
 
 db_user = os.environ.get('DB_USER', 'user_locale')
 db_pass = os.environ.get('DB_PASS', 'pass_locale')
@@ -337,8 +346,36 @@ def insert_order_entries(userId):
     updated_entries = OrderEntry.query.filter_by(id_user=userId, table_name=table_name).all()
     return jsonify([entry.to_dict() for entry in updated_entries]), 201
 
+# --- WebSocket Logic ---
+
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('join_restaurant')
+def on_join(data):
+    """
+    Devices send their user_id to join to the restourant room
+    JSON: { 'user_id: 'ID' }
+    """
+    user_id = data['userId']
+    join_room(user_id)
+    print(f'Device added to the room: {user_id}')
+
+@socketio.on('send_order')
+def handle_send_order(data):
+    """
+    Waiter sends an order. WebServer sents it to Kitchen
+    JSON: { 'user_id': 'ID', 'order': {...} }
+    """
+    user_id = data['userId']
+    order_data = data['order']
+
+    emit('receive:order', order_data, to=user_id)
+    print(f'Ordine inoltrato alla cucina del ristorante {user_id}')
+
 if __name__ == '__main__':
 
     with app.app_context():
         db.create_all()
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    socketio.run(app, host='0.0.0.0', port=500, allow_unsafe_werkzeug=True)
