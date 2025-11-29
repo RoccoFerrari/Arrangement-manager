@@ -30,6 +30,8 @@ import java.net.Socket
 import java.util.UUID
 import android.content.Context
 import android.net.nsd.NsdServiceInfo
+import com.example.arrangement_manager.socket_handler.SocketHandler
+import org.json.JSONObject
 import java.net.InetSocketAddress
 
 /**
@@ -70,15 +72,6 @@ class MenuOrderViewModel (
     private val orderAdapter = moshi.adapter(Order::class.java)
     private val apiService = RetrofitClient.apiService
 
-    // Network Service Discovery (NSD) for finding the kitchen server
-    private var nsdManager: NsdManager? = null
-    private var discoveryListener: NsdManager.DiscoveryListener? = null
-    private val serviceType = "_http._tcp."
-    private val kitchenPort = 6000
-
-    private val _kitchenIpAddress = MutableLiveData<String?>(null)
-    private val kitchenIpAddress: LiveData<String?> = _kitchenIpAddress
-
     /**
      * Called when the ViewModel is created.
      * It initiates loading the menu items and starts the network service discovery.
@@ -90,7 +83,6 @@ class MenuOrderViewModel (
                 calculateTotalPrice(quantities)
             }
         }
-        startDiscovery()
     }
 
     fun getMenu() {
@@ -162,52 +154,43 @@ class MenuOrderViewModel (
                     if (response.isSuccessful) {
                         Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the database. Sending it to the kitchen.")
 
-                        val kitchenIp = kitchenIpAddress.value
+                        // Sending the order with socket.io
+                        try {
+                            val dishToSend = _orderedItems.value.map { (menuItem, quantity) ->
+                                DishItem(
+                                    dishName = menuItem.name,
+                                    price = menuItem.price,
+                                    quantity = quantity
+                                )
+                            }.filter { it.quantity > 0 }
 
-                        if (kitchenIp != null) {
-                            var socket: Socket? = null
-                            var writer: PrintWriter? = null
-                            try {
-                                Log.d("DEBUG_MENU_ORDER", "Attempting to connect to IP: $kitchenIp on the port $kitchenPort")
+                            val tableId = "${table.idUser}::${table.name}"
+                            val orderId = UUID.randomUUID().toString()
+                            val orderToSend = Order(
+                                orderId = orderId,
+                                tableId = tableId,
+                                dishes = dishToSend
+                            )
 
-                                // Use a socket with timeout for more robust handling (5 secs)
-                                socket = Socket()
-                                socket.connect(InetSocketAddress(kitchenIp, kitchenPort), 5000)
-                                Log.d("DEBUG_MENU_ORDER", "Socket created and connected")
+                            // Kotlin obj -> JSON string
+                            val orderJsonString = orderAdapter.toJson(orderToSend)
+                            // Payload Envelope for the server
+                            val socketPayload = JSONObject()
+                            socketPayload.put("userId", userId)
+                            // Convert Moshi's JSON string in native JSON object
+                            socketPayload.put("order", JSONObject(orderJsonString))
 
-                                writer = PrintWriter(OutputStreamWriter(socket.getOutputStream()), true)
-                                Log.d("DEBUG_MENU_ORDER", "Writer created")
-
-                                // Sending the order to the kitchen via Wi-Fi
-                                val dishesToSend = _orderedItems.value.map { (menuItem, quantity) ->
-                                    DishItem(dishName = menuItem.name, price = menuItem.price, quantity = quantity)
-                                }.filter { it.quantity > 0 }
-
-                                val tableId = "${table.idUser}::${table.name}"
-                                val orderId = UUID.randomUUID().toString()
-                                val orderToSend = Order(orderId = orderId, tableId = tableId, dishes = dishesToSend)
-                                val jsonString = orderAdapter.toJson(orderToSend)
-
-                                Log.d("DEBUG_MENU_ORDER", "Sending JSON data: $jsonString")
-
-                                writer.println(jsonString)
-
-                                Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the kitchen too.")
-
-                            } catch (e: Exception) {
-                                Log.e("DEBUG_MENU_ORDER", "Wi-Fi sending error: ${e.message}", e)
-                                _errorMessage.value = "Order saved in database, but error sending to kitchen: ${e.message}"
-                            } finally {
-                                writer?.close()
-                                socket?.close()
-                                Log.d("DEBUG_MENU_ORDER", "Socket and Writer closed.")
+                            val socket = SocketHandler.getSocket()
+                            if(socket != null && socket.connected()) {
+                                socket.emit("send_order", socketPayload)
+                                Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the kitchen.")
+                            } else {
+                                Log.e("DEBUG_MENU_ORDER", "Socket not connected or null.")
+                                _errorMessage.value = "Order saved in database, but kitchen server not found."
                             }
-
-                        } else {
-                            Log.e("DEBUG_MENU_ORDER", "Kitchen IP address unavailable.")
-                            _errorMessage.value = "Order saved in database, but kitchen server not found."
+                        } catch (e: Exception) {
+                            Log.e("DEBUG_MENU_ORDER", "Error sending order to the kitchen: ${e.message}", e)
                         }
-
                         updateMenuItemQuantities()
                         _orderConfirmed.value = true
 
@@ -292,54 +275,6 @@ class MenuOrderViewModel (
         _totalPrice.value = total
     }
 
-    // --- Network Service Discovery (NSD) methods ---
-
-    /**
-     * Starts discovering network services.
-     * Specifically, it looks for services of type "_http._tcp." to find the kitchen server.
-     */
-    private fun startDiscovery() {
-        nsdManager = getApplication<Application>().getSystemService(Context.NSD_SERVICE) as NsdManager
-
-        discoveryListener = object : NsdManager.DiscoveryListener {
-            override fun onStartDiscoveryFailed(serviceType: String?, errorCode: Int) { Log.e("NSD", "Discovery startup failed: $errorCode") }
-            override fun onStopDiscoveryFailed(serviceType: String?, errorCode: Int) { Log.e("NSD", "Discovery startup failed: $errorCode") }
-            override fun onDiscoveryStarted(serviceType: String?) { Log.d("NSD", "Discovery underway: $serviceType") }
-            override fun onDiscoveryStopped(serviceType: String?) { Log.d("NSD", "Discovery arrested: $serviceType") }
-            override fun onServiceLost(serviceInfo: NsdServiceInfo?) { Log.d("NSD", "Lost service: ${serviceInfo?.serviceName}") }
-
-            override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
-                if (serviceInfo?.serviceType == serviceType) {
-                    Log.d("NSD", "Service found: ${serviceInfo.serviceName}")
-                    // Trovato un servizio del tipo giusto, ora risolviamolo per ottenere l'IP
-                    nsdManager?.resolveService(serviceInfo, object : NsdManager.ResolveListener {
-                        override fun onResolveFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                            Log.e("NSD", "Service resolution failed: $errorCode")
-                        }
-                        override fun onServiceResolved(serviceInfo: NsdServiceInfo?) {
-                            val ipAddress = serviceInfo?.host?.hostAddress
-                            Log.d("NSD", "Kitchen IP fixed: $ipAddress")
-                            _kitchenIpAddress.postValue(ipAddress)
-                            stopDiscovery()
-                        }
-                    })
-                }
-            }
-        }
-
-        nsdManager?.discoverServices(serviceType, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
-    }
-
-    /**
-     * Stops the network service discovery.
-     */
-    private fun stopDiscovery() {
-        discoveryListener?.let { listener ->
-            nsdManager?.stopServiceDiscovery(listener)
-            discoveryListener = null
-        }
-    }
-
     /**
      * Called when the ViewModel is about to be destroyed.
      *
@@ -347,6 +282,5 @@ class MenuOrderViewModel (
      */
     override fun onCleared() {
         super.onCleared()
-        stopDiscovery()
     }
 }
