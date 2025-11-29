@@ -125,6 +125,13 @@ class OrderEntry(db.Model):
 # ------------------------------------------------------
 # ENDPOINT API ---> DAO Functions
 
+@app.route('/')
+def index():
+    return jsonify({
+        "status": "online",
+        "message": "Arrangement Manager Backend is running correctly!"
+    }), 200
+
 # User management
 @app.route('/users/register', methods=['POST'])
 def register_user():
@@ -376,6 +383,14 @@ def handle_send_order(data):
 
 if __name__ == '__main__':
 
+    port = 5000
+    host = '0.0.0.0'
+
     with app.app_context():
         db.create_all()
-    socketio.run(app, host='0.0.0.0', port=500, allow_unsafe_werkzeug=True)
+    
+    print(f"WebSocket Server active! Link to:")
+    print(f"http://localhost:{port} (on this PC)")
+    print(f"http://<TUO_IP_LOCALE>:{port} (from other devices)")
+    
+    socketio.run(app, host=host, port=port, allow_unsafe_werkzeug=True, debug=True)
