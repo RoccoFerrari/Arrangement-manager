@@ -1,11 +1,8 @@
 package com.example.arrangement_manager.menu_order
 
 import android.app.Application
-import android.net.nsd.NsdManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.arrangement_manager.kitchen.DishItem
 import com.example.arrangement_manager.kitchen.Order
@@ -24,15 +21,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
-import java.io.OutputStreamWriter
-import java.io.PrintWriter
-import java.net.Socket
 import java.util.UUID
-import android.content.Context
-import android.net.nsd.NsdServiceInfo
 import com.example.arrangement_manager.socket_handler.SocketHandler
 import org.json.JSONObject
-import java.net.InetSocketAddress
 
 /**
  * ViewModel for the MenuOrderDialogFragment.
@@ -275,12 +266,4 @@ class MenuOrderViewModel (
         _totalPrice.value = total
     }
 
-    /**
-     * Called when the ViewModel is about to be destroyed.
-     *
-     * It ensures that network service discovery is stopped to prevent resource leaks.
-     */
-    override fun onCleared() {
-        super.onCleared()
-    }
 }

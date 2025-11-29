@@ -1,29 +1,14 @@
 package com.example.arrangement_manager.kitchen
 
 import android.app.Application
-import android.content.Context
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
 import com.google.gson.GsonBuilder
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.io.PrintWriter
-import java.net.InetSocketAddress
-import java.net.ServerSocket
-import java.net.Socket
-import java.net.SocketException
-import java.net.SocketTimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
+import com.example.arrangement_manager.socket_handler.SocketHandler
+import io.socket.client.Socket
+import org.json.JSONObject
 
 /**
  * ViewModel for the Kitchen screen.
@@ -46,147 +31,33 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
 
     // --- Server Communication via Wi-Fi ---
     // AtomicBoolean to track if the server is running, ensuring thread-safe state management
-    private val isServerRunning = AtomicBoolean(false)
-    private var serverJob: Job? = null
-    private var serverSocket: ServerSocket? = null
     private val gson = GsonBuilder().create()
-
-    // --- Network Service Discovery (NSD) ---
-    private var nsdManager: NsdManager? = null
-    private var registrationListener: NsdManager.RegistrationListener? = null
-
-    // Service details for NSD
-    private val serviceName = "KitchenService"
-    private val serviceType = "_http._tcp."
-    private val serverPort = 6000
-
-    // Mapping of IPs sending orders: tableName -> ip
-    private val clientMap = mutableMapOf<String, String>()
+    private var mSocket: Socket? = null
 
     init {
         _kitchenOrders.value = emptyList()
-        startListeningForOrders()
-        registerService()
+
+        mSocket = SocketHandler.getSocket()
+
+        setupSocketListener()
     }
 
-    /**
-     * Registers the ViewModel as a service on the local network using NSD.
-     *
-     * This allows clients (e.g., waiter's tablets) to discover the kitchen device's IP address
-     * and port to send orders.
-     */
-    private fun registerService() {
-        nsdManager = getApplication<Application>().getSystemService(Context.NSD_SERVICE) as NsdManager
-        val serviceInfo = NsdServiceInfo().apply {
-            serviceName = this@KitchenViewModel.serviceName
-            serviceType = this@KitchenViewModel.serviceType
-            port = this@KitchenViewModel.serverPort
-        }
-
-        registrationListener = object : NsdManager.RegistrationListener {
-            override fun onRegistrationFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) {
-                Log.e("NDS", "Registration failed: $errorCode")
-            }
-            override fun onServiceRegistered(serviceInfo: NsdServiceInfo?) {
-                Log.d("NDS", "Service registered: $serviceInfo")
-            }
-            override fun onServiceUnregistered(serviceInfo: NsdServiceInfo?) { }
-            override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo?, errorCode: Int) { }
-        }
-        nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, registrationListener)
-    }
-    
-    /**
-     * Starts a background server on a separate coroutine to listen for incoming client connections.
-     *
-     * The server will run indefinitely until the ViewModel is cleared. Each new client connection
-     * is handled in its own coroutine to allow for concurrent connections.
-     */
-    private fun startListeningForOrders() {
-        if (isServerRunning.compareAndSet(false, true)) {
-            serverJob = viewModelScope.launch(Dispatchers.IO) {
+    private fun setupSocketListener() {
+        // Listen the event from the Server
+        mSocket?.on("receive_order") { args ->
+            if(args.isNotEmpty()) {
                 try {
-                    serverSocket = ServerSocket(serverPort)
-                    Log.d("DEBUG_KITCHEN", "Server listening on port $serverPort...")
-                    while (isServerRunning.get()) {
-                        val clientSocket = serverSocket?.accept()
+                    val data = args[0] as JSONObject
+                    Log.d("DEBUG_KITCHEN", "Received data: $data")
 
-                        if (clientSocket != null) {
-                            Log.d("DEBUG_KITCHEN", "Connection received from ${clientSocket.inetAddress.hostAddress}")
-                            launch {
-                                handleClient(clientSocket)
-                            }
-                        }
-                    }
-                } catch (e: SocketException) {
-                    // Occurs when the server is stopped (viewmodel end of life)
-                    Log.d("DEBUG_KITCHEN", "Server stopped: ${e.message}")
+                    // Convert JSON in Kotlin Obj
+                    val order = gson.fromJson(data.toString(), Order::class.java)
+                    addOrder(order)
                 } catch (e: Exception) {
-                    Log.e("DEBUG_KITCHEN", "Server error: ${e.message}")
-                } finally {
-                    isServerRunning.set(false)
-                    serverSocket?.close()
-                    serverSocket = null
+                    Log.e("DEBUG_KITCHEN", "Error converting JSON: ${e.message}")
                 }
             }
         }
-    }
-    
-    /**
-     * Handles an incoming client connection.
-     *
-     * This function reads JSON data from the socket, converts it into an [Order] object,
-     * and updates the list of orders to be displayed on the UI.
-     * @param clientSocket The socket for the client connection.
-     */
-    private suspend fun handleClient(clientSocket: java.net.Socket) {
-        withContext(Dispatchers.IO) {
-            clientSocket.use { socket ->
-                val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val jsonString = reader.readLine() // lettura di una sola riga
-
-                if(jsonString != null) {
-                    Log.d("DEBUG_KITCHEN", "JSON data received: $jsonString")
-                    try {
-                        val order = gson.fromJson(jsonString, Order::class.java)
-                        val clientIp = socket.inetAddress.hostAddress
-                        Log.d("DEBUG_KITCHEN", "Order received for table ${order.tableId}, IP: $clientIp")
-                        clientMap[order.tableId] = clientIp!!
-                        // Passing order to UI via viewmodel
-                        withContext(Dispatchers.Main) {
-                            addOrder(order)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("DEBUG_KITCHEN", "Error converting JSON: ${e.message}")
-                    }
-                } else {
-                    Log.d("DEBUG_KITCHEN", "No orders received")
-                }
-            }
-        }
-    }
-
-    /**
-     * Called when the ViewModel is no longer used and is being destroyed.
-     *
-     * This method ensures that the NSD service is unregistered and the server socket is properly
-     * shut down to prevent resource leaks.
-     */
-    override fun onCleared() {
-        super.onCleared()
-        registrationListener?.let { nsdManager?.unregisterService(it) }
-        stopListeningForOrders()
-    }
-
-    /**
-     * Stops the server from listening for new connections.
-     *
-     * This is called when the ViewModel is cleared to gracefully shut down the server.
-     */
-    private fun stopListeningForOrders() {
-        Log.d("DEBUG_KITCHEN", "Attempting to shut down the server")
-        isServerRunning.set(false)
-        serverJob?.cancel()
     }
 
     /**
@@ -234,7 +105,7 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
             val tableNumber = orderToUpdate.tableId.split("::Table ").last()
             // Notification for ready dish
             val message = "Dish '${displayDishItem.dishItem.dishName}' from table $tableNumber is ready!"
-            sendNotificationToClient(orderToUpdate.tableId, message)
+            sendNotificationToServer(orderToUpdate.tableId, message, isOrderComplete = false)
 
             val updatedDishes = orderToUpdate.dishes.toMutableList()
             // Find the dish to update by name
@@ -265,7 +136,7 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Removes an entire order and sends a completion notification to the client.
      *
-     * This function removes an order from the list and then calls [sendNotificationToClient]
+     * This function removes an order from the list and then calls [sendNotificationToServer]
      * to inform the client that their order is ready.
      * @param orderId The unique ID of the order to be removed.
      */
@@ -279,7 +150,7 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
             _kitchenOrders.value = currentList
 
             Log.d("DEBUG_KITCHEN", "Attempt to send notification for table $tableId.")
-            sendNotificationToClient(tableId, "Order of the table $tableNumber completed")
+            sendNotificationToServer(tableId, "Order of the table $tableNumber completed", isOrderComplete = true)
         }
     }
 
@@ -292,33 +163,21 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
      * @param tableId The ID of the table to send the notification to.
      * @param message The message content to be sent.
      */
-    private fun sendNotificationToClient(tableId: String, message: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val clientIp = clientMap[tableId]
-            if (clientIp != null) {
-                val timeout = 5000 // 5 seconds
-
-                try {
-                    Log.d("DEBUG_KITCHEN", "Attempting to connect to $clientIp on port 6001 for notification with timeout $timeout ms.")
-
-                    val socket = Socket()
-                    socket.connect(InetSocketAddress(clientIp, 6001), timeout)
-
-                    PrintWriter(OutputStreamWriter(socket.getOutputStream()), true).use { writer ->
-                        Log.d("DEBUG_KITCHEN", "Socket connected, sending message: $message")
-                        writer.println(message)
-                    }
-                    socket.close()
-                    clientMap.remove(tableId)
-                    Log.d("DEBUG_KITCHEN", "Notification successfully sent to $clientIp.")
-                } catch (e: SocketTimeoutException) {
-                    Log.d("DEBUG_KITCHEN", "Timeout occurred while connecting to $clientIp.")
-                } catch (e: Exception) {
-                    Log.e("DEBUG_KITCHEN", "Error sending notification to $clientIp: ${e.message}")
-                }
-            } else {
-                Log.e("DEBUG_KITCHEN", "No IP found for the table $tableId.")
-            }
+    private fun sendNotificationToServer(tableId: String, message: String, isOrderComplete: Boolean) {
+        val payload = JSONObject()
+        try {
+            payload.put("tableId", tableId)
+            payload.put("message", message)
+            payload.put("type", if(isOrderComplete) "ORDER_COMPLETE" else "DISH_READY")
+            mSocket?.emit("kitchen_status_update", payload)
+            Log.d("DEBUG_KITCHEN", "Notification sent to $tableId")
+        } catch (e: Exception) {
+            Log.e("DEBUG_KITCHEN", "Error sending notification: ${e.message}")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        mSocket?.off("receive_order")
     }
 }
