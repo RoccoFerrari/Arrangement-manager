@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.example.arrangement_manager.retrofit.RetrofitClient.apiService
 import com.example.arrangement_manager.retrofit.User
+import com.example.arrangement_manager.socket_handler.SocketHandler
 import retrofit2.HttpException
 import java.io.IOException
 
@@ -52,6 +53,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     val loginBody = loginResponse.body()
                     val loggedInUser = loginBody?.user
                     if (loggedInUser != null) {
+                        SocketHandler.setSocket(loggedInUser.email)
+                        SocketHandler.establishConnection()
+
                         _userSessionState.value = UserSession(
                             email = loggedInUser.email,
                             isLoggedIn = true,
@@ -128,6 +132,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 if (registerResponse.isSuccessful) {
                     val registeredUser = registerResponse.body()
                     if (registeredUser != null) {
+                        SocketHandler.setSocket(registeredUser.email)
+                        SocketHandler.establishConnection()
+
                         _userSessionState.value = UserSession(email = registeredUser.email, isLoggedIn = true, isLoading = false)
                     } else {
                         _userSessionState.value = _userSessionState.value.copy(isLoading = false, errorMessage = "Invalid registration response.")
