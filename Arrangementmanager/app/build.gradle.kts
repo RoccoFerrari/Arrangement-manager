@@ -53,6 +53,8 @@ dependencies {
     // Test helpers
     testImplementation("androidx.room:room-testing:$room_version")
 
+    implementation("io.socket:socket.io-client:2.0.0")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
