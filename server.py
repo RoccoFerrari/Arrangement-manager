@@ -2,6 +2,7 @@
 # Compile: python3 server.py
 
 import os
+import uuid
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
@@ -314,11 +315,17 @@ def delete_menu_item(userId, name):
 # --- Order management ---
 @app.route('/users/<string:userId>/orders', methods=['POST'])
 def insert_order_entries(userId):
-    """Endpoint to insert or update order items"""
+    """
+    Endpoint to insert order items AND notify the Kitchen via Socket.IO
+    """
     order_entries_data = request.json
     if not isinstance(order_entries_data, list):
         return jsonify({"error": "The body of the request must be a list of orders"}), 400
     
+    # Dict to group new dishes by table
+    # Allow to send a clean notification
+    new_orders_by_table = {} 
+
     for entry_data in order_entries_data:
         table_name = entry_data.get('table_name')
         menu_item_name = entry_data.get('menu_item_name')
@@ -327,19 +334,19 @@ def insert_order_entries(userId):
         if not all([table_name, menu_item_name, quantity is not None]):
             return jsonify({"error": "Incomplete order data"}), 400
 
+        # Verify that table and dish exist
         if not Table.query.get((table_name, userId)):
-            return jsonify({"error": f"Table '{table_name}' not found for user '{userId}'"}), 404
-        if not MenuItem.query.get((menu_item_name, userId)):
-            return jsonify({"error": f"Menu item '{menu_item_name}' not found for user '{userId}'"}), 404
+            return jsonify({"error": f"Table '{table_name}' not found"}), 404
+        
+        menu_item_db = MenuItem.query.get((menu_item_name, userId))
+        if not menu_item_db:
+            return jsonify({"error": f"Menu item '{menu_item_name}' not found"}), 404
 
-        # Check if there is already an order for this table, dish and user
         existing_order = OrderEntry.query.get((table_name, menu_item_name, userId))
         
         if existing_order:
-            # If the order exists, update the quantity
             existing_order.quantity += quantity
         else:
-            # If it does not exist, create a new order
             new_entry = OrderEntry(
                 table_name=table_name,
                 menu_item_name=menu_item_name,
@@ -347,9 +354,38 @@ def insert_order_entries(userId):
                 quantity=quantity
             )
             db.session.add(new_entry)
+        
+        # Socket Notification
+        # Group by table
+        if table_name not in new_orders_by_table:
+            new_orders_by_table[table_name] = []
+        
+        new_orders_by_table[table_name].append({
+            "dishName": menu_item_name,
+            "price": menu_item_db.price,
+            "quantity": quantity
+        })
             
     db.session.commit()
     
+    # Socket Event
+    try:
+        for table_name, dishes in new_orders_by_table.items():
+            # Format: "userEmail::TableName"
+            full_table_id = f"{userId}::{table_name}"
+            
+            socket_payload = {
+                "orderId": str(uuid.uuid4()),
+                "tableId": full_table_id,
+                "dishes": dishes
+            }
+            
+            socketio.emit('receive_order', socket_payload, to=userId)
+            print(f"Socket event 'receive_order' sent to room {userId} for table {table_name}")
+            
+    except Exception as e:
+        print(f"Error emitting socket event: {e}")
+
     updated_entries = OrderEntry.query.filter_by(id_user=userId, table_name=table_name).all()
     return jsonify([entry.to_dict() for entry in updated_entries]), 201
 
