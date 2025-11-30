@@ -143,51 +143,14 @@ class MenuOrderViewModel (
                     val response = apiService.insertOrderEntries(userId, newOrderEntries)
 
                     if (response.isSuccessful) {
-                        Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the database. Sending it to the kitchen.")
+                        Log.d("DEBUG_MENU_ORDER", "Order sent to database successfully.")
 
-                        // Sending the order with socket.io
-                        try {
-                            val dishToSend = _orderedItems.value.map { (menuItem, quantity) ->
-                                DishItem(
-                                    dishName = menuItem.name,
-                                    price = menuItem.price,
-                                    quantity = quantity
-                                )
-                            }.filter { it.quantity > 0 }
-
-                            val tableId = "${table.idUser}::${table.name}"
-                            val orderId = UUID.randomUUID().toString()
-                            val orderToSend = Order(
-                                orderId = orderId,
-                                tableId = tableId,
-                                dishes = dishToSend
-                            )
-
-                            // Kotlin obj -> JSON string
-                            val orderJsonString = orderAdapter.toJson(orderToSend)
-                            // Payload Envelope for the server
-                            val socketPayload = JSONObject()
-                            socketPayload.put("userId", userId)
-                            // Convert Moshi's JSON string in native JSON object
-                            socketPayload.put("order", JSONObject(orderJsonString))
-
-                            val socket = SocketHandler.getSocket()
-                            if(socket != null && socket.connected()) {
-                                socket.emit("send_order", socketPayload)
-                                Log.d("DEBUG_MENU_ORDER", "Order successfully sent to the kitchen.")
-                            } else {
-                                Log.e("DEBUG_MENU_ORDER", "Socket not connected or null.")
-                                _errorMessage.value = "Order saved in database, but kitchen server not found."
-                            }
-                        } catch (e: Exception) {
-                            Log.e("DEBUG_MENU_ORDER", "Error sending order to the kitchen: ${e.message}", e)
-                        }
                         updateMenuItemQuantities()
                         _orderConfirmed.value = true
 
                     } else {
                         val errorBody = response.errorBody()?.string()
-                        Log.e("DEBUG_MENU_ORDER", "Error sending order to database: ${response.code()} - $errorBody")
+                        Log.e("DEBUG_MENU_ORDER", "Error sending order: ${response.code()} - $errorBody")
                         _errorMessage.value = "Error sending order: ${response.code()}"
                     }
                 } catch (e: IOException) {

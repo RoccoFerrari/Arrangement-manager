@@ -18,11 +18,13 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.arrangement_manager.R
+import com.example.arrangement_manager.socket_handler.SocketHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
@@ -37,174 +39,113 @@ import java.net.SocketException
  * allowing it to continuously monitor for new order notifications from the backend.
  */
 class NotificationService : Service() {
-    // The port number on which the service listens for incoming connections
-    private val notificationPort = 6001
-
-    // A coroutine job that can be cancelled
-    private var serviceJob = SupervisorJob()
-
-    // The coroutine scope for the service, using the IO dispatcher
-    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
-
-    /**
-     * Companion object to hold constants related to the foreground service notification.
-     */
     companion object {
         const val FOREGROUND_CHANNEL_ID = "ForegroundServiceChannel"
         const val FOREGROUND_NOTIFICATION_ID = 101
+        const val ORDER_CHANNEL_ID = "order_channel" // ID stabile per le notifiche ordini
     }
 
-    /**
-     * Called when the service is started.
-     *
-     * This method creates a notification channel, starts the service in the foreground,
-     * and begins listening for connections.
-     * @return START_STICKY to indicate the system should try to re-create the service if it's killed.
-     */
+    override fun onCreate() {
+        super.onCreate()
+        setupSocketListener()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
         val notification = createForegroundNotification()
 
         startForeground(FOREGROUND_NOTIFICATION_ID, notification)
 
-        startListening()
-
         return START_STICKY
     }
 
-    /**
-     * Called when a client binds to the service.
-     *
-     * This service is not designed to be bound to, so this method returns null.
-     */
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
 
     /**
-     * Creates a notification channel for Android O and above.
-     *
-     * This is required for displaying notifications on newer Android versions.
+     * Collega l'evento Socket.IO 'waiter_notification' alla UI locale
      */
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
-                FOREGROUND_CHANNEL_ID,
-                "Foreground Service Channel",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            val manager = getSystemService(NotificationManager::class.java) as NotificationManager
-            manager.createNotificationChannel(serviceChannel)
+    private fun setupSocketListener() {
+        val socket = SocketHandler.getSocket()
+        if (socket == null) {
+            Log.e("NotificationService", "Socket is null, cannot listen for notifications")
+            return
         }
-    }
 
-    /**
-     * Creates the notification that will be used for the foreground service.
-     *
-     * This notification is visible to the user and informs them that a background service is running.
-     * @return The created [Notification] object.
-     */
-    private fun createForegroundNotification(): Notification {
-        return NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID)
-            .setContentTitle("Active Order Manager")
-            .setContentText("Listening for new order notifications.")
-            .setSmallIcon(R.drawable.arrangement_manager)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-    }
+        socket.off("waiter_notification")
 
-    /**
-     * Starts a coroutine to listen for incoming TCP connections.
-     *
-     * This function runs a server socket on the specified port. When a connection is accepted,
-     * it spawns a new coroutine to handle the client communication and receive the notification message.
-     */
-    private fun startListening() {
-        serviceScope.launch {
-            try {
-                val notificationServerSocket = ServerSocket(notificationPort)
-                Log.d("DEBUG_NOTIFICATION", "Server listening on port $notificationPort")
-                while (isActive) {
-                    val clientSocket = notificationServerSocket.accept()
-                    val clientIp = clientSocket.inetAddress.hostAddress
-                    Log.d(
-                        "DEBUG_NOTIFICATION",
-                        "Connection notification received from $clientIp"
-                    )
-                    launch {
-                        handleClientNotification(clientSocket)
-                    }
+        socket.on("waiter_notification") { args ->
+            if (args.isNotEmpty()) {
+                try {
+                    val data = args[0] as JSONObject
+                    val message = data.optString("message")
+
+                    Log.d("NotificationService", "Notification received: $message")
+                    showOrderReadyNotification(message)
+
+                } catch (e: Exception) {
+                    Log.e("NotificationService", "Error parsing notification: ${e.message}")
                 }
-            } catch (e: SocketException) {
-                Log.d("DEBUG_NOTIFICATION", "Listener closed")
-            } catch (e: Exception) {
-                Log.e("DEBUG_NOTIFICATION", "Error while connecting: ${e.message}")
             }
         }
     }
 
-    /**
-     * Handles a single client connection.
-     *
-     * It reads a message from the client socket, displays a notification with the message,
-     * and then closes the socket.
-     * @param clientSocket The [Socket] representing the client connection.
-     */
-    private fun handleClientNotification(clientSocket: Socket) {
-        val reader = BufferedReader(InputStreamReader(clientSocket.getInputStream()))
-        val message = reader.readLine()
-        Log.d("DEBUG_NOTIFICATION", "Message received: $message")
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                FOREGROUND_CHANNEL_ID,
+                "Order Listener Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val orderChannel = NotificationChannel(
+                ORDER_CHANNEL_ID,
+                "Order Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            )
 
-        if(message != null) {
-            showOrderReadyNotification(message)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(serviceChannel)
+            manager.createNotificationChannel(orderChannel)
         }
-        clientSocket.close()
     }
 
-    /**
-     * Displays a high-priority notification to the user.
-     *
-     * This method also checks for the POST_NOTIFICATIONS permission on newer Android versions
-     * and triggers a vibration effect.
-     * @param message The text to be displayed in the notification.
-     */
-    fun showOrderReadyNotification(message: String) {
-        val context = applicationContext
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+    private fun createForegroundNotification(): Notification {
+        return NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID)
+            .setContentTitle("Arrangement Manager")
+            .setContentText("Connected to kitchen...")
+            .setSmallIcon(R.drawable.arrangement_manager)
+            .build()
+    }
+
+    private fun showOrderReadyNotification(message: String) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w("NotificationService", "Missing notification permission")
             return
         }
 
-        val notificationManager = NotificationManagerCompat.from(context)
+        val notificationManager = NotificationManagerCompat.from(this)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("order_channel", "Order Notifications", NotificationManager.IMPORTANCE_HIGH)
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val builder = NotificationCompat.Builder(context, "order_channel")
+        val builder = NotificationCompat.Builder(this, ORDER_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Order Ready!")
+            .setContentTitle("Order Update!")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
 
-        notificationManager.notify(123, builder.build())
+        // System.currentTimeMillis().toInt(): id
+        notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
         vibrateDevice()
     }
 
-    /**
-     * Triggers a one-shot vibration on the device.
-     *
-     * It handles different Android versions to ensure compatibility.
-     */
     private fun vibrateDevice() {
-        val context = applicationContext
         val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-            vibratorManager?.defaultVibrator
+            val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+            manager?.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         }
 
         vibrator?.let {
@@ -221,6 +162,7 @@ class NotificationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        serviceJob.cancel()
+        // Importante: stacca il listener quando il servizio muore per evitare memory leak o crash
+        SocketHandler.getSocket()?.off("waiter_notification")
     }
 }

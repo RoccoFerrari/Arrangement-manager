@@ -58,46 +58,14 @@ class MainActivity : AppCompatActivity() {
     private fun setupSocketConnection() {
         val sessionManager = SessionManager(this)
 
-        // Check if the user is logged in
         if (sessionManager.isLoggedIn()) {
             val userId = sessionManager.getUserEmail()
 
             if (userId != null) {
                 Log.d("MainActivity", "User logged in: $userId - Initializing Socket...")
 
-                // socket connection setup
                 SocketHandler.setSocket(userId)
                 SocketHandler.establishConnection()
-
-                // start connecting to the server
-                val socket = SocketHandler.getSocket()
-
-                // Remove the previous listener if it exists
-                socket?.off("waiter_notification")
-
-                socket?.on("waiter_notification") { args ->
-                    if (args.isNotEmpty()) {
-                        try {
-                            val data = args[0] as JSONObject
-                            val message = data.optString("message")
-                            val tableId = data.optString("tableId")
-
-                            // I callback del socket sono in background, dobbiamo usare runOnUiThread per la UI
-                            runOnUiThread {
-                                Toast.makeText(
-                                    this,
-                                    "🔔 Kitchen: $message",
-                                    Toast.LENGTH_LONG
-                                ).show()
-
-                                // Vibration
-
-                            }
-                        } catch (e: Exception) {
-                            Log.e("MainActivity", "Error in parsing notification: ${e.message}")
-                        }
-                    }
-                }
             }
         }
     }
