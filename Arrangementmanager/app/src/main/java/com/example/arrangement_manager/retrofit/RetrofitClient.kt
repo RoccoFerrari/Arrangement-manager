@@ -20,10 +20,10 @@ object RetrofitClient {
     // Don't use 127.0.0.1 because this address refers to the emulator itself.
     // Use http://10.0.2.2:5000/ to reference the localhost.
     // private const val BASE_URL = "http://10.0.2.2:5000/" // LH
-     //private const val BASE_URL = "http://192.168.1.17:5000/" // LT
+     private const val BASE_URL = "http://192.168.1.17:5000/" // LT
      // private const val BASE_URL = "http://172.20.10.3:5000/" // Hotspot
     // private const val BASE_URL = "http://192.168.1.109:5000/" // Sottosopra
-    private const val BASE_URL = "https://arrangement-manager.roccoferrari.com/"
+    // private const val BASE_URL = "https://arrangement-manager.roccoferrari.com/"
 
     // private const val BASE_URL = "http://192.168.1.106:5000/" // Sottosopra
 

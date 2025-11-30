@@ -9,7 +9,7 @@ import java.net.URISyntaxException
 object SocketHandler {
     private var mSocket: Socket? = null
     private const val TAG = "SocketHandler"
-    private const val SERVER_URL = "https://arrangement-manager.roccoferrari.com"
+    private const val SERVER_URL = "http://192.168.1.17:5000"
 
     @Synchronized
     fun setSocket(userId: String) {
