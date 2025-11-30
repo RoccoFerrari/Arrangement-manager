@@ -61,6 +61,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                             isLoggedIn = true,
                             isLoading = false
                         )
+                        val sessionManager = SessionManager(getApplication())
+                        sessionManager.saveUserSession(email)
                     } else {
                         _userSessionState.value = _userSessionState.value.copy(
                             isLoading = false,

@@ -23,7 +23,7 @@ import org.json.JSONObject
  *
  * @param application The application context.
  */
-class KitchenViewModel(application: Application) : AndroidViewModel(application) {
+class KitchenViewModel(application: Application, private val userId: String) : AndroidViewModel(application) {
 
     // LiveData to hold the list of incoming orders. The UI observes this data
     private val _kitchenOrders = MutableLiveData<List<Order>>()
@@ -166,6 +166,7 @@ class KitchenViewModel(application: Application) : AndroidViewModel(application)
     private fun sendNotificationToServer(tableId: String, message: String, isOrderComplete: Boolean) {
         val payload = JSONObject()
         try {
+            payload.put("userId", userId)
             payload.put("tableId", tableId)
             payload.put("message", message)
             payload.put("type", if(isOrderComplete) "ORDER_COMPLETE" else "DISH_READY")
