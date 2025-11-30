@@ -444,4 +444,5 @@ if __name__ == '__main__':
     print(f"http://localhost:{port} (on this PC)")
     print(f"http://<TUO_IP_LOCALE>:{port} (from other devices)")
     
-    socketio.run(app, host=host, port=port, allow_unsafe_werkzeug=True, debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    socketio.run(app, host=host, port=port, allow_unsafe_werkzeug=True, debug=debug_mode)
