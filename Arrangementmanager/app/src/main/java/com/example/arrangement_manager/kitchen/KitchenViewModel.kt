@@ -5,9 +5,12 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.google.gson.GsonBuilder
 import com.example.arrangement_manager.socket_handler.SocketHandler
 import io.socket.client.Socket
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /**
@@ -43,18 +46,20 @@ class KitchenViewModel(application: Application, private val userId: String) : A
     }
 
     private fun setupSocketListener() {
-        // Listen the event from the Server
         mSocket?.on("receive_order") { args ->
             if(args.isNotEmpty()) {
-                try {
-                    val data = args[0] as JSONObject
-                    Log.d("DEBUG_KITCHEN", "Received data: $data")
+                viewModelScope.launch(Dispatchers.Main) {
+                    try {
+                        val data = args[0] as JSONObject
+                        Log.d("DEBUG_KITCHEN", "Received data: $data")
 
-                    // Convert JSON in Kotlin Obj
-                    val order = gson.fromJson(data.toString(), Order::class.java)
-                    addOrder(order)
-                } catch (e: Exception) {
-                    Log.e("DEBUG_KITCHEN", "Error converting JSON: ${e.message}")
+                        val order = gson.fromJson(data.toString(), Order::class.java)
+
+                        addOrder(order)
+
+                    } catch (e: Exception) {
+                        Log.e("DEBUG_KITCHEN", "Error processing order: ${e.message}")
+                    }
                 }
             }
         }

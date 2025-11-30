@@ -1,5 +1,5 @@
 # Activate Virtual Environment: source venv/bin/activate
-# Compile: python3 server.py
+# Compile: venv/bin/python3 server.py
 
 import os
 import uuid
